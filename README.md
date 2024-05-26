@@ -1,5 +1,8 @@
 # ByteChat 🚀💬
 
+![GitHub repo size](https://img.shields.io/github/repo-size/i-christian/bytechat?style=flat-square)
+![GitHub license](https://img.shields.io/github/license/i-christian/bytechat?style=flat-square)
+
 ## Description
 ByteChat is a real-time chat application backend built with Rust, leveraging the power of Axum and SocketIO. SocketIO provides a convenient abstraction over WebSockets, enabling seamless and efficient real-time communication between clients and the server. This setup allows for instant messaging capabilities, making it ideal for chat applications where low-latency interaction is crucial.
 
@@ -42,7 +45,8 @@ cargo shuttle run
 ## Contributing 🤝
 I welcome contributions to enhance ByteChat. Feel free to fork the repository, make your changes, and submit a pull request.
 
-## License 📄
+## Licensing 📄
+ByteChat is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements 🙌
 Special thanks to the developers of Rust, Axum, and socketioxide for their excellent tools and libraries.
