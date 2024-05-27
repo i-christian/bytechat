@@ -1,6 +1,6 @@
 mod state;
 
-use axum::routing::get;
+use axum::{http::StatusCode, routing::get};
 use socketioxide::{
     extract::{Data, SocketRef, State},
     SocketIo,
@@ -52,6 +52,14 @@ async fn on_connect(socket: SocketRef) {
     )
 }
 
+/// fallback - handler for wrong URL
+/// *StatusCode: param
+/// *str: param
+/// return - a tuple of status code and a string slice
+async fn fallback() -> (StatusCode, &'static str) {
+    (StatusCode::NOT_FOUND, "Not Found")
+}
+
 async fn handler(axum::extract::State(io): axum::extract::State<SocketIo>) {
     info!("handler called");
     let _ = io.emit("hello", "world");
@@ -66,6 +74,7 @@ async fn main() -> shuttle_axum::ShuttleAxum {
     io.ns("/", on_connect);
 
     let app = axum::Router::new()
+        .fallback(fallback)
         .route("/", get(|| async { "Hello, World!" }))
         .route("/hello", get(handler))
         .with_state(io)
