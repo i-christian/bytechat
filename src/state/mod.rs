@@ -2,6 +2,8 @@ use chrono::Utc;
 use serde::Serialize;
 use sqlx::PgPool;
 
+mod tests;
+
 #[derive(Serialize, Clone, Debug)]
 pub struct Message {
     pub text: String,
