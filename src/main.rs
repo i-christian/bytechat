@@ -5,6 +5,7 @@ use socketioxide::{
     extract::{Data, SocketRef, State},
     SocketIo,
 };
+use sqlx::postgres::PgPoolOptions;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::info;
@@ -37,7 +38,7 @@ async fn on_connect(socket: SocketRef) {
             info!("Received join: {:?}", room);
             let _ = socket.leave_all();
             let _ = socket.join(room.clone());
-            let messages = store.get(&room).await;
+            let messages = store.get(&room).await.unwrap_or_default();
             let _ = socket.emit("messages", Messages { messages });
         },
     );
@@ -53,7 +54,7 @@ async fn on_connect(socket: SocketRef) {
                 date: chrono::Utc::now(),
             };
 
-            store.insert(&data.room, response.clone()).await;
+            store.insert(&data.room, response.clone()).await.unwrap();
 
             let _ = socket.within(data.room).emit("message", response);
         },
@@ -77,7 +78,15 @@ async fn fallback() -> (StatusCode, &'static str) {
 /// with routing and middleware. It starts the server using Shuttle runtime.
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
-    let messages = state::MessageStore::default();
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+        .expect("Failed to create pool.");
+
+    let messages = state::MessageStore::new(pool);
 
     let (layer, io) = SocketIo::builder().with_state(messages).build_layer();
 
