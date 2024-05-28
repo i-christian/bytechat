@@ -20,6 +20,14 @@ struct Messages {
     messages: Vec<state::Message>,
 }
 
+/// Handles socket connection events
+///
+/// This function is called when a new socket connection is established. It sets up
+/// listeners for "join" and "message" events on the socket.
+///
+/// # Arguments
+///
+/// * `socket` - A reference to the connected socket
 async fn on_connect(socket: SocketRef) {
     info!("socket connected: {}", socket.id);
 
@@ -52,14 +60,21 @@ async fn on_connect(socket: SocketRef) {
     )
 }
 
-/// fallback - handler for wrong URL
-/// *StatusCode: param
-/// *str: param
-/// return - a tuple of status code and a string slice
+/// Fallback handler for incorrect URLs
+///
+/// Returns a 404 Not Found status code and a "Not Found" message.
+///
+/// # Returns
+///
+/// A tuple containing the status code and a static string slice
 async fn fallback() -> (StatusCode, &'static str) {
     (StatusCode::NOT_FOUND, "Not Found")
 }
 
+/// Main function to set up and run the server
+///
+/// This function sets up the message store, socket.io layer, and the axum application
+/// with routing and middleware. It starts the server using Shuttle runtime.
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
     let messages = state::MessageStore::default();
