@@ -60,11 +60,6 @@ async fn fallback() -> (StatusCode, &'static str) {
     (StatusCode::NOT_FOUND, "Not Found")
 }
 
-async fn handler(axum::extract::State(io): axum::extract::State<SocketIo>) {
-    info!("handler called");
-    let _ = io.emit("hello", "world");
-}
-
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
     let messages = state::MessageStore::default();
@@ -76,7 +71,6 @@ async fn main() -> shuttle_axum::ShuttleAxum {
     let app = axum::Router::new()
         .fallback(fallback)
         .route("/", get(|| async { "Hello, World!" }))
-        .route("/hello", get(handler))
         .with_state(io)
         .layer(
             ServiceBuilder::new()
