@@ -7,7 +7,7 @@ use tracing::info;
 /// Handles socket connection events
 ///
 /// This function is called when a new socket connection is established. It sets up
-/// listeners for "join" and "message" events on the socket.
+/// listeners for "join", "message" and "typing" events on the socket.
 ///
 /// # Arguments
 ///
@@ -41,7 +41,19 @@ pub async fn on_connect(socket: SocketRef) {
 
             let _ = socket.within(data.room).emit("message", response);
         },
-    )
+    );
+
+    socket.on(
+        "typing",
+        |socket: SocketRef, Data::<String>(room)| async move {
+            info!("User {} is typing in room: {:?}", socket.id, room);
+
+            let _ = socket
+                .within(room)
+                .except(socket.id.clone())
+                .emit("typing", socket.id.clone());
+        },
+    );
 }
 
 /// Fallback handler for incorrect URLs
