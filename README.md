@@ -38,6 +38,11 @@ cd bytechat
 
 ### Run the application
 Use `cargo-shuttle` to run the application locally. This command will build and start the server:
+#### run migration First
+```
+ sqlx migrate run
+```
+#### Then run app
 ```
 cargo shuttle run
 ```
