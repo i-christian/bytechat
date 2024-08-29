@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.btn {
+  @apply rounded-md 
+  text-xl 
+  bg-transparent 
+  hover:bg-blue-900 
+  font-semibold 
+  border  
+  hover:border-transparent
+  flex 
+  justify-center 
+  items-center;
+}
