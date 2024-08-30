@@ -5,8 +5,8 @@
 .btn {
   @apply rounded-md 
   text-xl 
-  bg-transparent 
-  hover:bg-blue-900 
+  bg-blue-400 
+  hover:bg-blue-700 
   font-semibold 
   border  
   hover:border-transparent
