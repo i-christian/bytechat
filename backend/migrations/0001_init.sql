@@ -1,6 +1,0 @@
-CREATE TABLE if NOT EXISTS messages (
-    room TEXT NOT NULL,
-    text TEXT NOT NULL,
-    username TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
