@@ -4,7 +4,6 @@ use sqlx::PgPool;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-mod tests;
 
 /// Represents a message with text, user, and creation date.
 #[derive(Serialize, Clone, Debug)]
