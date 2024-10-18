@@ -22,12 +22,6 @@ The backend is designed to handle multiple concurrent connections, manage chat m
 
 ## How to Use 🛠️
 
-### Install cargo-shuttle
-First, install `cargo-shuttle` to help with deploying and running the application:
-```sh
-cargo install cargo-shuttle
-```
-
 ### Clone the Repository
 clone the `bytechat` repository to your local machine:
 ```
@@ -37,14 +31,8 @@ cd bytechat
 ```
 
 ### Run the application
-Use `cargo-shuttle` to run the application locally. This command will build and start the server:
-#### run migration First
 ```
- sqlx migrate run
-```
-#### Then run app
-```
-cargo shuttle run
+cargo run
 ```
 
 ## Contributing 🤝
