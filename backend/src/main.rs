@@ -1,11 +1,6 @@
-mod handlers;
-mod messages;
-mod routes;
-mod state;
-
+use axum::{routing::get, Router};
 use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
-use routes::setup_routes;
 use std::env;
 use tracing::info;
 
@@ -23,7 +18,8 @@ async fn main() {
 
     sqlx::migrate!().run(&pool).await.expect("Migration failed");
 
-    let app = setup_routes(pool).await;
+    let app = Router::new()
+        .route("/hello", get(|| async {"Hello, World!"}));
 
     info!("Starting server");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.expect("Failed to bind port");
