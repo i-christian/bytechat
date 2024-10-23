@@ -1,9 +1,14 @@
 use axum::{routing::get, Router};
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use dotenv::dotenv;
 use std::env;
 use tracing::info;
 
+
+#[derive(Clone)]
+struct MyState {
+    pool: PgPool,
+}
 
 #[tokio::main]
 async fn main() {
@@ -17,9 +22,11 @@ async fn main() {
         .expect("Failed to create a database connection.");
 
     sqlx::migrate!().run(&pool).await.expect("Migration failed");
+    let state = MyState{ pool };
 
     let app = Router::new()
-        .route("/hello", get(|| async {"Hello, World!"}));
+        .route("/hello", get(|| async {"Hello, World!"}))
+        .with_state(state);
 
     info!("Starting server");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.expect("Failed to bind port");
