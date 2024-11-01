@@ -1,22 +1,24 @@
 [package]
-name = "bytechat"
+name = "backend"
 version = "0.1.0"
 edition = "2021"
+publish = false
+
 
 [dependencies]
-axum = "0.7.5"
-chrono = { version = "0.4", features = ["serde"] }
-serde = { version = "1.0.189", features = ["derive"] }
-serde_json = "1.0.107"
-sqlx = {version = "0.7.4", features = ["runtime-tokio","macros", "time", "chrono", "tls-native-tls", "migrate", "postgres"]}
-tokio = {version = "1.37.0", features = ["full"]}
-tower = "0.4.13"
-tower-cookies = "0.10.0"
-tower-http = { version = "0.5.2", features = ["cors"] }
+axum = "0.7.7"
+axum-extra = { version = "0.9.4", features = ["cookie-private"] }
+axum-macros = "0.4.0"
+bcrypt = "0.15.0"
+http = "1.0.0"
+rand = "0.8.5"
+reqwest = "0.11.16"
+serde = { version = "1.0.160", features = ["derive"] }
+sqlx = {version = "0.8.2", features = ["runtime-tokio","macros", "time", "tls-native-tls", "migrate", "postgres"]}
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
-socketioxide = { version = "0.13.1", features = ["state"] }
+time = { version = "0.3.20", features = ["serde"] }
+tokio = {version = "1.37.0", features = ["full"]}
+tower = "0.4.13"
+tower-http = { version = "0.5.0", features = ["cors", "fs"] }
 dotenv = "0.15.0"
-cargo-chef = "0.1.68"
-askama = "0.12.1"
-askama_axum = "0.4.0"

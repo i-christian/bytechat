@@ -1,13 +1,19 @@
 -- Create Users Table
 CREATE TABLE IF NOT EXISTS users (
-    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
-    username VARCHAR(50) UNIQUE NOT NULL,                
-    email VARCHAR(100) UNIQUE NOT NULL,                  
-    password TEXT NOT NULL,                              
-    admin_id UUID REFERENCES users(user_id),             
-    status VARCHAR(20) DEFAULT 'active',                 
-    description TEXT,                                    
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    ROLE VARCHAR NOT NULL DEFAULT 'user'
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id SERIAL PRIMARY KEY,
+    session_id VARCHAR NOT NULL UNIQUE,
+    user_id int NOT NULL UNIQUE,
+    expires TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Create Rooms Table
