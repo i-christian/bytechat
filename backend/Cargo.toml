@@ -22,3 +22,4 @@ tokio = {version = "1.37.0", features = ["full"]}
 tower = "0.4.13"
 tower-http = { version = "0.5.0", features = ["cors", "fs"] }
 dotenv = "0.15.0"
+socketioxide = "0.15.0"

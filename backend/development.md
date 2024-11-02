@@ -10,9 +10,5 @@
     sqlx database create
     ```
   - ```
-     sqlx migrate run
+     sqlx migrate add <DESC>
     ```
-  - ```
-     cargo sqlx prepare
-    ```
-

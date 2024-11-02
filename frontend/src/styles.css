@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.btn {
+  @apply rounded-md 
+  text-xl 
+  bg-transparent 
+  hover:bg-blue-900 
+  font-semibold 
+  border  
+  hover:border-transparent
+  flex 
+  justify-center 
+  items-center;
+}

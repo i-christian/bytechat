@@ -25,7 +25,7 @@ pub fn create_api_router(state: AppState) -> Router {
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/logout", get(logout));
-
+    
     Router::new()
         // nest protected routes here
         .layer(middleware::from_fn_with_state(
