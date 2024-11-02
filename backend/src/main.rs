@@ -12,6 +12,7 @@ mod router;
 
 use router::create_api_router;
 use tracing::info;
+use tracing_subscriber::FmtSubscriber;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -29,6 +30,9 @@ impl FromRef<AppState> for Key {
 
 #[tokio::main]
 async fn main() {
+    tracing::subscriber::set_global_default(FmtSubscriber::default())
+        .expect("setting default subscriber failed");
+
     let (database_url, domain) = grab_secrets();
     let postgres = PgPoolOptions::new()
         .max_connections(10)
@@ -49,18 +53,16 @@ async fn main() {
         key: Key::generate(),
     };
 
-    let api_router = create_api_router(state);
+    let api_router = create_api_router(state.clone());
 
     let router = Router::new().nest("/api", api_router).nest_service(
         "/",
         ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
     );
-    
-    info!("Starting server");
+
+    info!("Started Application on: http://{}:3000", state.domain);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.expect("Failed to bind port");
     axum::serve(listener, router).await.expect("Failed to start application");
-
-
 }
 
 fn grab_secrets() -> (String, String) {
