@@ -9,6 +9,7 @@ use tower_http::services::{ServeDir, ServeFile};
 
 mod auth;
 mod router;
+mod tests;
 
 use router::create_api_router;
 use tracing::info;
@@ -32,8 +33,14 @@ impl FromRef<AppState> for Key {
 async fn main() {
     tracing::subscriber::set_global_default(FmtSubscriber::default())
         .expect("setting default subscriber failed");
+    
+    app().await;
+}
 
+
+pub(crate) async fn app() {
     let (database_url, domain) = grab_secrets();
+    
     let postgres = PgPoolOptions::new()
         .max_connections(10)
         .connect(&database_url)
@@ -65,6 +72,7 @@ async fn main() {
     axum::serve(listener, router).await.expect("Failed to start application");
 }
 
+
 fn grab_secrets() -> (String, String) {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -75,8 +83,5 @@ fn grab_secrets() -> (String, String) {
         
     };
 
-    (
-        database_url,
-        domain
-    )
+    ( database_url, domain )
 }
