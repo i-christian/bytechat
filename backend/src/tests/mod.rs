@@ -9,7 +9,7 @@ use crate::{router::create_api_router, AppState};
 #[tokio::test]
 async fn check_database_connectivity() {
     dotenv().ok();
-    let durl = std::env::var("DATABASE_URL").expect("set DATABASE_URL");
+    let durl = std::env::var("DATABASE_URL_TEST").expect("set DATABASE_URL_TEST");
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -23,7 +23,7 @@ async fn check_database_connectivity() {
 
 async fn new_test_app() -> TestServer {
     dotenv().ok();
-    let durl = std::env::var("DATABASE_URL").expect("set DATABASE_URL");
+    let durl = std::env::var("DATABASE_URL_TEST").expect("set DATABASE_URL_TEST");
     let domain = std::env::var("DOMAIN_URL").expect("failed to load domain");
 
     let postgres = PgPoolOptions::new()
@@ -31,6 +31,13 @@ async fn new_test_app() -> TestServer {
         .connect(&durl)
         .await
         .expect("unable to make connection");
+    
+    sqlx::migrate!()
+        .run(&postgres)
+        .await
+        .expect("Failed to run migrations");
+    
+
 
     let state = AppState {
         postgres,
@@ -43,37 +50,13 @@ async fn new_test_app() -> TestServer {
     let localhost = IpAddr::V4(Ipv4Addr::new(0,0,0,0));
 
     TestServer::builder()
-        .http_transport_with_ip_port(Some(localhost), Some(3000))
+        .http_transport_with_ip_port(Some(localhost), Some(8000))
         .save_cookies()
         .expect_success_by_default()
         .build(app)
-        .unwrap()
+        .expect("Failed to create a connection")
 
 }
 
 mod test_app_health;
-
-#[cfg(test)]
-mod test_register_user {
-    use super::*;
-
-    use http::StatusCode;
-    use serde_json::json;
-
-    #[tokio::test]
-    async fn it_should_create_user() {
-        let server = new_test_app().await;
-
-        let response = server
-            .post(&"/api/auth/register")
-            .json(&json!({
-                "name": "Boruto",
-                "email": "boruto@email.com",
-                "password": "changethis"
-            })).await;
-
-        let result = response.status_code();
-        assert_eq!(result, StatusCode::CREATED);
-
-    }
-}
+mod test_register_user;
