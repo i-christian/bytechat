@@ -35,7 +35,7 @@ async fn main() {
     tracing::subscriber::set_global_default(FmtSubscriber::default())
         .expect("setting default subscriber failed");
 
-    let (database_url, domain) = grab_secrets();
+    let (database_url, domain, static_files_dir)  = grab_secrets();
     let postgres = PgPoolOptions::new()
         .max_connections(10)
         .connect(&database_url)
@@ -59,7 +59,7 @@ async fn main() {
 
     let router = Router::new().nest("/api", api_router).nest_service(
         "/",
-        ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
+        ServeDir::new(&static_files_dir).not_found_service(ServeFile::new(format!("{}/index.html", static_files_dir))),
     );
 
     info!("Started Application on: http://{}:3000", state.domain);
@@ -71,7 +71,7 @@ async fn main() {
         .expect("Failed to start application");
 }
 
-fn grab_secrets() -> (String, String) {
+fn grab_secrets() -> (String, String, String) {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -79,6 +79,7 @@ fn grab_secrets() -> (String, String) {
         Ok(var) => var,
         Err(..) => "None".to_string(),
     };
+    let static_files_dir = env::var("STATIC_FILES_DIR").unwrap_or_else(|_| "dist".to_string());
 
-    (database_url, domain)
+    (database_url, domain, static_files_dir)
 }
