@@ -43,7 +43,7 @@ async fn new_test_app() -> TestServer {
     let localhost = IpAddr::V4(Ipv4Addr::new(0,0,0,0));
 
     TestServer::builder()
-        .http_transport_with_ip_port(Some(localhost), Some(8000))
+        .http_transport_with_ip_port(Some(localhost), Some(3000))
         .save_cookies()
         .expect_success_by_default()
         .build(app)
@@ -51,29 +51,29 @@ async fn new_test_app() -> TestServer {
 
 }
 
+mod test_app_health;
+
 #[cfg(test)]
-mod test_app_health {
+mod test_register_user {
     use super::*;
 
+    use http::StatusCode;
+    use serde_json::json;
+
     #[tokio::test]
-    async fn it_should_respond() {
+    async fn it_should_create_user() {
         let server = new_test_app().await;
-        let response = server.get(&"/api/health").await;
-        response.assert_text("Hello world!");
+
+        let response = server
+            .post(&"/api/auth/register")
+            .json(&json!({
+                "name": "Boruto",
+                "email": "boruto@email.com",
+                "password": "changethis"
+            })).await;
+
+        let result = response.status_code();
+        assert_eq!(result, StatusCode::CREATED);
+
     }
 }
-
-// #[cfg(test)]
-// mod test_register_user {
-//     use super::*;
-
-//     use axum::Json;
-
-//     #[tokio::test]
-//     async fn it_should_create_user() {
-//         let server = new_test_app().await;
-
-//         let response = server
-//             .post(&"/login")        
-//     }
-// }
