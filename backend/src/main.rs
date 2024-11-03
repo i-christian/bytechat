@@ -1,5 +1,5 @@
-use std::env;
 use dotenv::dotenv;
+use std::env;
 
 use axum::extract::FromRef;
 use axum::Router;
@@ -30,7 +30,6 @@ impl FromRef<AppState> for Key {
     }
 }
 
-
 #[tokio::main]
 async fn main() {
     tracing::subscriber::set_global_default(FmtSubscriber::default())
@@ -42,12 +41,12 @@ async fn main() {
         .connect(&database_url)
         .await
         .expect("Failed to create a database connection.");
-    
+
     sqlx::migrate!()
         .run(&postgres)
         .await
         .expect("Failed to run migrations");
-    
+
     info!("Database connected successfully");
 
     let state = AppState {
@@ -64,8 +63,12 @@ async fn main() {
     );
 
     info!("Started Application on: http://{}:3000", state.domain);
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.expect("Failed to bind port");
-    axum::serve(listener, router).await.expect("Failed to start application");
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+        .await
+        .expect("Failed to bind port");
+    axum::serve(listener, router)
+        .await
+        .expect("Failed to start application");
 }
 
 fn grab_secrets() -> (String, String) {
@@ -74,12 +77,8 @@ fn grab_secrets() -> (String, String) {
 
     let domain: String = match env::var("DOMAIN_URL") {
         Ok(var) => var,
-        Err(..) => "None".to_string()
-        
+        Err(..) => "None".to_string(),
     };
 
-    (
-        database_url,
-        domain
-    )
+    (database_url, domain)
 }

@@ -12,7 +12,6 @@ use tower_http::cors::CorsLayer;
 
 use crate::auth::{login, logout, register, validate_session};
 
-
 pub fn create_api_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_credentials(true)
@@ -20,12 +19,11 @@ pub fn create_api_router(state: AppState) -> Router {
         .allow_headers(vec![ORIGIN, AUTHORIZATION, ACCEPT])
         .allow_origin(state.domain.parse::<HeaderValue>().unwrap());
 
-
     let auth_router = Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/logout", get(logout));
-    
+
     Router::new()
         // nest protected routes here
         .layer(middleware::from_fn_with_state(
