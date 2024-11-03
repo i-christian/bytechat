@@ -10,6 +10,9 @@ use tower_http::services::{ServeDir, ServeFile};
 mod auth;
 mod router;
 
+#[cfg(test)]
+mod tests;
+
 use router::create_api_router;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
