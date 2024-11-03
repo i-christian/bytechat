@@ -4,4 +4,6 @@ rm -r backend/dist
 
 cd frontend && npm run build
 
-cd ../backend && cargo run
+cd ../backend && sqlx database create 
+
+cargo run
