@@ -1,0 +1,16 @@
+# Ignore frontend build files
+/frontend/node_modules
+/frontend/dist
+
+# Ignore local environment files and IDE configs
+.env
+**/target
+**/.git
+**/.idea
+**/.vscode
+
+# Cargo artifacts
+/target
+/.git
+Dockerfile
+docker-compose.yml
