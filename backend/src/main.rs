@@ -67,8 +67,8 @@ pub(crate) async fn app() {
         ServeDir::new("dist").not_found_service(ServeFile::new("dist/index.html")),
     );
 
-    info!("Started Application on: http://{}:3000", state.domain);
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.expect("Failed to bind port");
+    info!("Started Application on: http://{}:8000/api", state.domain);
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.expect("Failed to bind port");
     axum::serve(listener, router).await.expect("Failed to start application");
 }
 
