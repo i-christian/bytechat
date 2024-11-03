@@ -1,4 +1,4 @@
-name: Backend API testing 
+name: Rust CI with PostgreSQL, Clippy, and Rustfmt
 
 on:
   push:
@@ -52,22 +52,22 @@ jobs:
 
       - name: Run rustfmt
         run: |
-          cargo fmt -- --check
+          cd backend && cargo fmt -- --check
 
       - name: Run clippy
         run: |
-          cargo clippy -- -D warnings
+          cd backend && cargo clippy -- -D warnings
 
       - name: Create test database
         run: |
-          sqlx database create --database-url ${{ env.DATABASE_URL }}
+          cd backend && sqlx database create --database-url ${{ env.DATABASE_URL }}
 
       - name: Run tests
         run: |
-          RUST_TEST_THREADS=1 cargo test
+          cd backend && RUST_TEST_THREADS=1 cargo test
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
 
       - name: Drop test database
         run: |
-          sqlx database drop --database-url ${{ env.DATABASE_URL }} -y
+          cd backend && sqlx database drop --database-url ${{ env.DATABASE_URL }} -y
