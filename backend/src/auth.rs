@@ -74,7 +74,7 @@ pub async fn login(
             let session_id = Uuid::new_v4();
 
             sqlx::query("INSERT INTO sessions (session_id, user_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET session_id = EXCLUDED.session_id")
-                .bind(&session_id)
+                .bind(session_id)
                 .bind(res.get::<Uuid, _>("id"))
                 .execute(&state.postgres)
                 .await
