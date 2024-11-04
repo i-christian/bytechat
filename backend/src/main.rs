@@ -9,6 +9,7 @@ use tower_http::services::{ServeDir, ServeFile};
 
 mod auth;
 mod router;
+mod rooms;
 
 #[cfg(test)]
 mod tests;
