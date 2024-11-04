@@ -1,4 +1,4 @@
-name: Rust CI with PostgreSQL, Clippy, and Rustfmt
+name: testing
 
 on:
   push:
