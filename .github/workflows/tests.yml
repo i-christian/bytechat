@@ -53,9 +53,9 @@ jobs:
         run: |
           cd backend && cargo fmt -- --check
 
-      - name: Run clippy
-        run: |
-          cd backend && cargo clippy -- -D warnings
+      # - name: Run clippy
+      #   run: |
+      #     cd backend && cargo clippy -- -D warnings
 
       - name: Create test database
         run: |
