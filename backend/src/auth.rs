@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Request, State},
+    extract::{Request, State, Path},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
@@ -9,6 +9,7 @@ use axum_extra::extract::cookie::{Cookie, PrivateCookieJar, SameSite};
 use serde::Deserialize;
 use sqlx::Row;
 use time::Duration;
+use uuid::Uuid;
 
 use crate::AppState;
 
@@ -23,6 +24,12 @@ pub struct RegisterDetails {
 pub struct LoginDetails {
     email: String,
     password: String,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateUserDetails {
+    pub name: Option<String>,
+    pub password: Option<String>,
 }
 
 pub async fn register(
@@ -132,5 +139,56 @@ pub async fn validate_session(
             jar,
             (StatusCode::FORBIDDEN, "Forbidden!".to_string()).into_response(),
         ),
+    }
+}
+
+
+pub async fn edit_user(
+    State(state): State<AppState>,
+    Path(user_id): Path<Uuid>,
+    Json(details): Json<UpdateUserDetails>,
+) -> impl IntoResponse {
+    let hashed_password = match &details.password {
+        Some(password) => Some(bcrypt::hash(password, 10).unwrap()),
+        None => None,
+    };
+
+    let query = sqlx::query(
+        "UPDATE users 
+         SET name = COALESCE($1, name), password = COALESCE($2, password)
+         WHERE id = $3"
+    )
+    .bind(&details.name)
+    .bind(&hashed_password)
+    .bind(user_id)
+    .execute(&state.postgres);
+
+    match query.await {
+        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "User updated successfully!").into_response(),
+        Ok(_) => (StatusCode::NOT_FOUND, "User not found!").into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to update user: {e}"),
+        )
+        .into_response(),
+    }
+}
+
+pub async fn delete_user(
+    State(state): State<AppState>,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    let query = sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(user_id)
+        .execute(&state.postgres);
+
+    match query.await {
+        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "User deleted successfully!").into_response(),
+        Ok(_) => (StatusCode::NOT_FOUND, "User not found!").into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to delete user: {e}"),
+        )
+        .into_response(),
     }
 }
