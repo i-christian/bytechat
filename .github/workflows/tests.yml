@@ -28,7 +28,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL_TEST: "postgres://myuser:mypass@localhost/test_chat_app"
+      DATABASE_URL: "postgres://myuser:mypass@localhost/test_chat_app"
 
     steps:
       - name: Checkout code
@@ -59,14 +59,14 @@ jobs:
 
       - name: Create test database
         run: |
-          cd backend && sqlx database create --database-url ${{ env.DATABASE_URL_TEST }}
+          cd backend && sqlx database create --database-url ${{ env.DATABASE_URL }}
 
       - name: Run tests
         run: |
           cd backend && RUST_TEST_THREADS=1 cargo test
         env:
-          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
+          DATABASE_URL: ${{ env.DATABASE_URL }}
 
       - name: Drop test database
         run: |
-          cd backend && sqlx database drop --database-url ${{ env.DATABASE_URL_TEST }} -y
+          cd backend && sqlx database drop --database-url ${{ env.DATABASE_URL }} -y
