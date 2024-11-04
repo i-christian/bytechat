@@ -1,8 +1,8 @@
 use crate::AppState;
 use axum::{
-    http::{self},
-    middleware::{self},
-    routing::{get, post},
+    http,
+    middleware,
+    routing::{get, post, put},
     Router,
 };
 use http::header::{ACCEPT, AUTHORIZATION, ORIGIN};
@@ -11,7 +11,7 @@ use http::Method;
 use tower_http::cors::CorsLayer;
 
 use crate::auth::{login, logout, register, validate_session};
-use crate::rooms::{create_room, list_rooms};
+use crate::rooms::{create_room, list_rooms, delete_room, edit_room};
 
 
 pub fn create_api_router(state: AppState) -> Router {
@@ -22,8 +22,8 @@ pub fn create_api_router(state: AppState) -> Router {
         .allow_origin(state.domain.parse::<HeaderValue>().unwrap());
 
     let rooms_router = Router::new()
-        .route("/create", post(create_room))
-        .route("/list", get(list_rooms));
+        .route("/", get(list_rooms).post(create_room))
+        .route("/{room_id}", put(edit_room).delete(delete_room));
     
     let auth_router = Router::new()
         .route("/register", post(register))

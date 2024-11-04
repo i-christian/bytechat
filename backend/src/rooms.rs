@@ -1,15 +1,22 @@
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use crate::AppState;
 
 #[derive(Deserialize, Serialize)]
 pub struct Room {
     pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct UpdateRoom {
+    pub name: Option<String>,
     pub description: Option<String>,
 }
 
@@ -31,5 +38,37 @@ pub async fn list_rooms(State(state): State<AppState>) -> impl IntoResponse {
     match rooms {
         Ok(rooms) => Json(rooms).into_response(),
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to retrieve rooms").into_response(),
+    }
+}
+
+pub async fn delete_room(State(state): State<AppState>, Path(room_id): Path<Uuid>) -> impl IntoResponse {
+    let query = sqlx::query("DELETE FROM rooms WHERE room_id = $1")
+        .bind(room_id)
+        .execute(&state.postgres);
+    
+    match query.await {
+        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "Room deleted successfully!").into_response(),
+        Ok(_) => (StatusCode::NOT_FOUND, "Room not found!").into_response(),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete room").into_response(),
+    }
+}
+
+pub async fn edit_room(
+    State(state): State<AppState>,
+    Path(room_id): Path<Uuid>,
+    Json(update): Json<UpdateRoom>,
+) -> impl IntoResponse {
+    let query = sqlx::query(
+        "UPDATE rooms SET name = COALESCE($1, name), description = COALESCE($2, description) WHERE room_id = $3"
+    )
+    .bind(&update.name)
+    .bind(&update.description)
+    .bind(room_id)
+    .execute(&state.postgres);
+    
+    match query.await {
+        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "Room updated successfully!").into_response(),
+        Ok(_) => (StatusCode::NOT_FOUND, "Room not found!").into_response(),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update room").into_response(),
     }
 }
