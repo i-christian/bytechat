@@ -147,7 +147,10 @@ pub async fn edit_user(
     Path(user_id): Path<Uuid>,
     Json(details): Json<UpdateUserDetails>,
 ) -> impl IntoResponse {
-    let hashed_password = details.password.as_ref().map(|password| bcrypt::hash(password, 10).unwrap());
+    let hashed_password = details
+        .password
+        .as_ref()
+        .map(|password| bcrypt::hash(password, 10).unwrap());
 
     let query = sqlx::query(
         "UPDATE users 
