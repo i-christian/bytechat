@@ -8,6 +8,7 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use tower_http::services::{ServeDir, ServeFile};
 
 mod auth;
+mod messages;
 mod rooms;
 mod router;
 

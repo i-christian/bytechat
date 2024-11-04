@@ -56,3 +56,4 @@ async fn new_test_app() -> TestServer {
 
 mod test_app_health;
 mod test_register_user;
+mod test_user_login;

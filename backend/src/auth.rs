@@ -71,16 +71,16 @@ pub async fn login(
                 Err(_) => return Err(StatusCode::BAD_REQUEST),
             }
 
-            let session_id = rand::random::<u64>().to_string();
+            let session_id = Uuid::new_v4();
 
             sqlx::query("INSERT INTO sessions (session_id, user_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET session_id = EXCLUDED.session_id")
                 .bind(&session_id)
-                .bind(res.get::<i32, _>("id"))
+                .bind(res.get::<Uuid, _>("id"))
                 .execute(&state.postgres)
                 .await
                 .expect("Couldn't insert session :(");
 
-            let cookie = Cookie::build(("foo", session_id))
+            let cookie = Cookie::build(("sessionid", session_id.to_string()))
                 .secure(!cfg!(debug_assertions)) // Only send the cookie over HTTPS in production
                 .same_site(SameSite::Strict)
                 .http_only(true)
@@ -104,11 +104,11 @@ pub async fn logout(
     };
 
     let query = sqlx::query("DELETE FROM sessions WHERE session_id = $1")
-        .bind(cookie)
+        .bind(cookie.parse::<Uuid>().unwrap())
         .execute(&state.postgres);
 
     match query.await {
-        Ok(_) => Ok(jar.remove(Cookie::from("foo"))),
+        Ok(_) => Ok(jar.remove(Cookie::from("sessionid"))),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
@@ -119,7 +119,7 @@ pub async fn validate_session(
     request: Request,
     next: Next,
 ) -> (PrivateCookieJar, Response) {
-    let Some(cookie) = jar.get("foo").map(|cookie| cookie.value().to_owned()) else {
+    let Some(cookie) = jar.get("sessionid").map(|cookie| cookie.value().to_owned()) else {
         println!("Couldn't find a cookie in the jar");
         return (
             jar,
@@ -129,7 +129,7 @@ pub async fn validate_session(
 
     let find_session =
         sqlx::query("SELECT * FROM sessions WHERE session_id = $1 AND expires > CURRENT_TIMESTAMP")
-            .bind(cookie)
+            .bind(cookie.parse::<Uuid>().unwrap())
             .execute(&state.postgres)
             .await;
 

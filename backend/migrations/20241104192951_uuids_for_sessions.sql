@@ -8,10 +8,11 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL DEFAULT 'user'
 );
 
+-- Create Sessions Table
 CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
-    session_id VARCHAR(255) NOT NULL UNIQUE,
-    user_id UUID NOT NULL,
+    session_id UUID NOT NULL UNIQUE,
+    user_id UUID NOT NULL UNIQUE,
     expires TIMESTAMP WITH TIME ZONE,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
     name VARCHAR(100) NOT NULL,                         
     description TEXT,                                    
+    room_type VARCHAR(50) NOT NULL DEFAULT 'private',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -44,6 +46,8 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for optimization
+-- Indexes for Optimization
 CREATE INDEX IF NOT EXISTS idx_user_room ON chat_rooms(user_id, room_id);
 CREATE INDEX IF NOT EXISTS idx_room_created_at ON messages(room_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
