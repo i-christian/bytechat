@@ -2,23 +2,32 @@
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/i-christian/bytechat?style=flat-square)
 ![GitHub license](https://img.shields.io/github/license/i-christian/bytechat?style=flat-square)
+[![Build Status](https://github.com/i-christian/bytechat/actions/workflows/test.yml/badge.svg)](https://github.com/i-christian/bytechat/actions/workflows/tests.yml)
+[![GitHub Issues](https://img.shields.io/github/issues/i-christian/bytechat)](https://github.com/i-christian/bytechat/issues)
+[![GitHub Contributors](https://img.shields.io/github/contributors/i-christian/bytechat)](https://github.com/i-christian/bytechat/graphs/contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/i-christian/bytechat)](https://github.com/i-christian/bytechat/commits/main)
+[![Latest Release](https://img.shields.io/github/v/release/i-christian/bytechat?include_prereleases)](https://github.com/i-christian/bytechat/releases)
+
 
 ## Description
-ByteChat is a real-time chat application backend built with Rust, leveraging the power of Axum and SocketIO. SocketIO provides a convenient abstraction over WebSockets, enabling seamless and efficient real-time communication between clients and the server. This setup allows for instant messaging capabilities, making it ideal for chat applications where low-latency interaction is crucial.
+ByteChat is a real-time chat application with a backend built in Rust (using Axum and SocketIO) and a frontend powered by SolidJS. The backend leverages Rust’s high-performance capabilities, while SocketIO provides an efficient WebSocket abstraction for low-latency, bidirectional communication.
 
-The backend is designed to handle multiple concurrent connections, manage chat messages, and broadcast messages to all connected clients in real-time. By using Rust, known for its performance and safety, the backend ensures robust and reliable handling of numerous simultaneous connections without compromising on speed.
+ByteChat is designed for scalability and concurrency, ideal for chat applications where multiple users require instant messaging. The backend handles numerous simultaneous connections, ensuring speed and reliability with Rust’s memory safety and performance.
 
 ### Key Features
 - **Real-Time Communication**: Utilizing SocketIO over WebSockets for instant, bidirectional communication.
 - **Concurrency Handling**: Rust’s async capabilities, powered by Tokio, manage numerous concurrent connections efficiently.
 - **Message Broadcasting**: Broadcasts messages to all connected clients, perfect for group chats.
 - **Robust and Scalable**: Built with Rust and Axum, ensuring a fast, secure, and scalable backend.
-- **Extensible Architecture**: Modular design allows for easy integration of additional features such as authentication, message persistence, and user management.
+- **Extensible Architecture**: Modular design allows for easy integration of additional features such as authentication, message persistence, and user management
+- **Dockerized Deployment**: Easily deploy ByteChat with Docker for a consistent environment.
 
 ## Prerequisites 📋
 - [Rust](https://www.rust-lang.org/)
 - [Axum](https://docs.rs/axum/latest/axum/)
 - [socketioxide](https://docs.rs/socketioxide/latest/socketioxide/)
+- [Node.js & npm](https://nodejs.org/)
+- [Docker](https://www.docker.com/)
 
 ## How to Use 🛠️
 
@@ -30,9 +39,24 @@ git clone https://github.com/i-christian/bytechat.git
 cd bytechat
 ```
 
-### Run the application
+### Running with Docker 🐳
+- **Build and Start**: Ensure Docker is installed, then run the following command to build and start the services.
 ```
-cargo run
+  docker compose up -d
+```
+
+- **Access the Application**: Once the container is running, access ByteChat at:
+```
+  http://localhost:3000
+```
+- **Stop the Service**: Run the following command to stop the service:
+```
+  docker compose down --remove-orphans
+```
+
+### Run the application (without Docker)
+```
+./buid.sh or cargo run
 ```
 
 ## Contributing 🤝
