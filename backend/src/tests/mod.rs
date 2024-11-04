@@ -17,7 +17,7 @@ async fn check_database_connectivity() {
         .await
         .expect("unable to make connection");
 
-    assert_eq!(pool.is_closed(), false);
+    assert!(!pool.is_closed());
 }
 
 async fn new_test_app() -> TestServer {

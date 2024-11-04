@@ -8,7 +8,7 @@ async fn it_should_create_user() {
     let server = new_test_app().await;
 
     let response = server
-        .post(&"/api/auth/register")
+        .post("/api/auth/register")
         .json(&json!({
                 "name": "Boruto",
                 "email": "boruto@email.com",
@@ -26,7 +26,7 @@ async fn it_should_fail_to_create_user() {
     let server = new_test_app().await;
 
     let response = server
-        .post(&"/api/auth/register")
+        .post("/api/auth/register")
         .json(&json!({
                 "name": "Boruto",
                 "email": "boruto@email.com",
