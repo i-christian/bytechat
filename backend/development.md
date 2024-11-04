@@ -12,3 +12,6 @@
   - ```
      sqlx migrate add <DESC>
     ```
+  - ```
+    cargo sqlx prepare
+   ```

@@ -52,6 +52,10 @@ jobs:
       - name: Run rustfmt
         run: |
           cd backend && cargo fmt -- --check
+            
+      - name: Generate SQLx query cache
+        run: |
+          cd backend && cargo sqlx prepare
 
       - name: Run clippy
         run: |
