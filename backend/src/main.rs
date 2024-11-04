@@ -35,7 +35,7 @@ async fn main() {
     tracing::subscriber::set_global_default(FmtSubscriber::default())
         .expect("setting default subscriber failed");
 
-    let (database_url, domain, static_files_dir)  = grab_secrets();
+    let (database_url, domain, static_files_dir) = grab_secrets();
     let postgres = PgPoolOptions::new()
         .max_connections(10)
         .connect(&database_url)
@@ -59,7 +59,8 @@ async fn main() {
 
     let router = Router::new().nest("/api", api_router).nest_service(
         "/",
-        ServeDir::new(&static_files_dir).not_found_service(ServeFile::new(format!("{}/index.html", static_files_dir))),
+        ServeDir::new(&static_files_dir)
+            .not_found_service(ServeFile::new(format!("{}/index.html", static_files_dir))),
     );
 
     info!("Started Application on: http://{}:3000", state.domain);
