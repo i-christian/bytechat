@@ -6,9 +6,10 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use uuid::Uuid;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, FromRow)]
 pub struct Room {
     pub name: String,
     pub description: Option<String>,
@@ -35,16 +36,20 @@ pub async fn create_room(
 }
 
 pub async fn list_rooms(State(state): State<AppState>) -> impl IntoResponse {
-    let rooms = sqlx::query_as!(Room, "SELECT name, description FROM rooms")
+    let rooms_result = sqlx::query_as::<_, Room>("SELECT name, description FROM rooms")
         .fetch_all(&state.postgres)
         .await;
-    match rooms {
+
+    match rooms_result {
         Ok(rooms) => Json(rooms).into_response(),
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to retrieve rooms",
-        )
-            .into_response(),
+        Err(err) => {
+            eprintln!("Database error: {}", err);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to retrieve rooms",
+            )
+                .into_response()
+        }
     }
 }
 
