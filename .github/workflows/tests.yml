@@ -56,6 +56,11 @@ jobs:
       - name: Generate SQLx query cache
         run: |
           cd backend && cargo sqlx prepare
+      
+      - name: Run migrations
+        run: |
+          cd backend && sqlx migrate run --database-url ${{ env.DATABASE_URL }}
+
 
       - name: Run clippy
         run: |
