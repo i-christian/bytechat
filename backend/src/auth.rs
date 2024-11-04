@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Request, State, Path},
+    extract::{Path, Request, State},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
@@ -142,7 +142,6 @@ pub async fn validate_session(
     }
 }
 
-
 pub async fn edit_user(
     State(state): State<AppState>,
     Path(user_id): Path<Uuid>,
@@ -156,7 +155,7 @@ pub async fn edit_user(
     let query = sqlx::query(
         "UPDATE users 
          SET name = COALESCE($1, name), password = COALESCE($2, password)
-         WHERE id = $3"
+         WHERE id = $3",
     )
     .bind(&details.name)
     .bind(&hashed_password)
@@ -164,13 +163,15 @@ pub async fn edit_user(
     .execute(&state.postgres);
 
     match query.await {
-        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "User updated successfully!").into_response(),
+        Ok(result) if result.rows_affected() > 0 => {
+            (StatusCode::OK, "User updated successfully!").into_response()
+        }
         Ok(_) => (StatusCode::NOT_FOUND, "User not found!").into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Failed to update user: {e}"),
         )
-        .into_response(),
+            .into_response(),
     }
 }
 
@@ -183,12 +184,14 @@ pub async fn delete_user(
         .execute(&state.postgres);
 
     match query.await {
-        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "User deleted successfully!").into_response(),
+        Ok(result) if result.rows_affected() > 0 => {
+            (StatusCode::OK, "User deleted successfully!").into_response()
+        }
         Ok(_) => (StatusCode::NOT_FOUND, "User not found!").into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Failed to delete user: {e}"),
         )
-        .into_response(),
+            .into_response(),
     }
 }

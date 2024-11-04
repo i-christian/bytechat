@@ -1,3 +1,4 @@
+use crate::AppState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -6,7 +7,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::AppState;
 
 #[derive(Deserialize, Serialize)]
 pub struct Room {
@@ -20,7 +20,10 @@ pub struct UpdateRoom {
     pub description: Option<String>,
 }
 
-pub async fn create_room(State(state): State<AppState>, Json(room): Json<Room>) -> impl IntoResponse {
+pub async fn create_room(
+    State(state): State<AppState>,
+    Json(room): Json<Room>,
+) -> impl IntoResponse {
     let query = sqlx::query("INSERT INTO rooms (name, description) VALUES ($1, $2)")
         .bind(&room.name)
         .bind(&room.description)
@@ -37,17 +40,26 @@ pub async fn list_rooms(State(state): State<AppState>) -> impl IntoResponse {
         .await;
     match rooms {
         Ok(rooms) => Json(rooms).into_response(),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to retrieve rooms").into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to retrieve rooms",
+        )
+            .into_response(),
     }
 }
 
-pub async fn delete_room(State(state): State<AppState>, Path(room_id): Path<Uuid>) -> impl IntoResponse {
+pub async fn delete_room(
+    State(state): State<AppState>,
+    Path(room_id): Path<Uuid>,
+) -> impl IntoResponse {
     let query = sqlx::query("DELETE FROM rooms WHERE room_id = $1")
         .bind(room_id)
         .execute(&state.postgres);
-    
+
     match query.await {
-        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "Room deleted successfully!").into_response(),
+        Ok(result) if result.rows_affected() > 0 => {
+            (StatusCode::OK, "Room deleted successfully!").into_response()
+        }
         Ok(_) => (StatusCode::NOT_FOUND, "Room not found!").into_response(),
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete room").into_response(),
     }
@@ -65,9 +77,11 @@ pub async fn edit_room(
     .bind(&update.description)
     .bind(room_id)
     .execute(&state.postgres);
-    
+
     match query.await {
-        Ok(result) if result.rows_affected() > 0 => (StatusCode::OK, "Room updated successfully!").into_response(),
+        Ok(result) if result.rows_affected() > 0 => {
+            (StatusCode::OK, "Room updated successfully!").into_response()
+        }
         Ok(_) => (StatusCode::NOT_FOUND, "Room not found!").into_response(),
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update room").into_response(),
     }
