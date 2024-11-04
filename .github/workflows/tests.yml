@@ -28,7 +28,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: "postgres://myuser:mypass@localhost/test_chat_app"
+      DATABASE_URL_TEST: "postgres://myuser:mypass@localhost/test_chat_app"
 
     steps:
       - name: Checkout code
@@ -53,20 +53,20 @@ jobs:
         run: |
           cd backend && cargo fmt -- --check
 
-      # - name: Run clippy
-      #   run: |
-      #     cd backend && cargo clippy -- -D warnings
+      - name: Run clippy
+        run: |
+          cd backend && cargo clippy -- -D warnings
 
       - name: Create test database
         run: |
-          cd backend && sqlx database create --database-url ${{ env.DATABASE_URL }}
+          cd backend && sqlx database create --database-url ${{ env.DATABASE_URL_TEST }}
 
       - name: Run tests
         run: |
           cd backend && RUST_TEST_THREADS=1 cargo test
         env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
+          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
 
       - name: Drop test database
         run: |
-          cd backend && sqlx database drop --database-url ${{ env.DATABASE_URL }} -y
+          cd backend && sqlx database drop --database-url ${{ env.DATABASE_URL_TEST }} -y
