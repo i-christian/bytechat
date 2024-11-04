@@ -2,7 +2,7 @@
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/i-christian/bytechat?style=flat-square)
 ![GitHub license](https://img.shields.io/github/license/i-christian/bytechat?style=flat-square)
-[![Build Status](https://github.com/i-christian/bytechat/actions/workflows/test.yml/badge.svg)](https://github.com/i-christian/bytechat/actions/workflows/tests.yml)
+[![Build Status](https://github.com/i-christian/bytechat/actions/workflows/tests.yml/badge.svg)](https://github.com/i-christian/bytechat/actions/workflows/tests.yml)
 [![GitHub Issues](https://img.shields.io/github/issues/i-christian/bytechat)](https://github.com/i-christian/bytechat/issues)
 [![GitHub Contributors](https://img.shields.io/github/contributors/i-christian/bytechat)](https://github.com/i-christian/bytechat/graphs/contributors)
 [![Last Commit](https://img.shields.io/github/last-commit/i-christian/bytechat)](https://github.com/i-christian/bytechat/commits/main)
