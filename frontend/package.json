@@ -11,7 +11,6 @@
   "dependencies": {
     "@solidjs/router": "^0.15.0",
     "axios": "^1.7.7",
-    "socket.io-client": "^4.8.1",
     "solid-js": "^1.9.3"
   },
   "devDependencies": {
