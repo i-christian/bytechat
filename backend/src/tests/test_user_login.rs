@@ -8,7 +8,7 @@ async fn it_should_login_successfully() {
     let server = new_test_app().await;
 
     let response = server
-        .post(&"/api/auth/login")
+        .post("/api/auth/login")
         .json(&json!({
                 "email": "boruto@email.com",
                 "password": "changethis"
