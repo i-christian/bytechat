@@ -1,3 +1,4 @@
+use crate::auth::get_user_id;
 use crate::AppState;
 use axum::extract::ws::{Message, WebSocket};
 use axum::{
@@ -5,7 +6,9 @@ use axum::{
     response::IntoResponse,
 };
 
+use axum_extra::extract::PrivateCookieJar;
 use futures::stream::StreamExt;
+use http::StatusCode;
 use sqlx::types::Uuid;
 use std::collections::HashMap;
 use tokio::sync::{mpsc, RwLock};
@@ -16,13 +19,20 @@ pub async fn websocket_handler(
     ws: WebSocketUpgrade,
     Path(room_id): Path<Uuid>,
     State(state): State<AppState>,
+    jar: PrivateCookieJar,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, room_id, state))
+    let user_id = match get_user_id(jar, State(state.clone())).await {
+        Some(id) => id,
+        None => {
+            return (StatusCode::FORBIDDEN, "Unauthorized").into_response();
+        }
+    };
+
+    ws.on_upgrade(move |socket| handle_socket(socket, room_id, user_id, state))
 }
 
-async fn handle_socket(mut socket: WebSocket, room_id: Uuid, state: AppState) {
+async fn handle_socket(mut socket: WebSocket, room_id: Uuid, user_id: Uuid, state: AppState) {
     let (sender, _receiver) = mpsc::unbounded_channel();
-    let user_id = Uuid::new_v4();
 
     state
         .user_sockets
@@ -67,9 +77,10 @@ async fn handle_socket(mut socket: WebSocket, room_id: Uuid, state: AppState) {
                 continue;
             }
 
+            let formatted_message = format!("{}: {}", user_id, text);
             for (&uid, tx) in state.user_sockets.read().await.iter() {
                 if uid != user_id {
-                    let _ = tx.send(Message::Text(text.clone()));
+                    let _ = tx.send(Message::Text(formatted_message.clone()));
                 }
             }
         }
