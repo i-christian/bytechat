@@ -5,6 +5,9 @@ use axum::extract::FromRef;
 use axum::Router;
 use axum_extra::extract::cookie::Key;
 use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
 
 mod auth;
@@ -15,6 +18,7 @@ mod router;
 #[cfg(test)]
 mod tests;
 
+use crate::messages::UserSockets;
 use router::create_api_router;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
@@ -24,6 +28,7 @@ pub struct AppState {
     pub postgres: PgPool,
     pub domain: String,
     pub key: Key,
+    pub user_sockets: Arc<UserSockets>,
 }
 
 impl FromRef<AppState> for Key {
@@ -55,6 +60,7 @@ async fn main() {
         postgres,
         domain,
         key: Key::generate(),
+        user_sockets: Arc::new(RwLock::new(HashMap::new())),
     };
 
     let api_router = create_api_router(state.clone());

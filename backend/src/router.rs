@@ -12,6 +12,7 @@ use tower_http::cors::CorsLayer;
 use crate::auth::{
     delete_user, edit_user, get_all_users, login, logout, register, validate_session,
 };
+use crate::messages::websocket_handler;
 use crate::rooms::{
     create_private_room, create_public_room, delete_room, edit_room, join_room, list_rooms,
 };
@@ -28,7 +29,8 @@ pub fn create_api_router(state: AppState) -> Router {
         .route("/", post(join_room))
         .route("/create/private", post(create_private_room))
         .route("/create/public", post(create_public_room))
-        .route("/:room_id", put(edit_room).delete(delete_room));
+        .route("/:room_id", put(edit_room).delete(delete_room))
+        .route("/:room_id/ws", get(websocket_handler));
 
     let auth_router = Router::new()
         .route("/register", post(register))

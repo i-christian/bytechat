@@ -4,7 +4,10 @@ use axum_extra::extract::cookie::Key;
 use axum_test::TestServer;
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
+use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 #[tokio::test]
 async fn check_database_connectivity() {
@@ -40,6 +43,7 @@ async fn new_test_app() -> TestServer {
         postgres,
         domain,
         key: Key::generate(),
+        user_sockets: Arc::new(RwLock::new(HashMap::new())),
     };
 
     let api_router = create_api_router(state);
