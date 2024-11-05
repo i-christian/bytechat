@@ -24,7 +24,31 @@ async fn handle_socket(mut socket: WebSocket, room_id: Uuid, state: AppState) {
     let (sender, _receiver) = mpsc::unbounded_channel();
     let user_id = Uuid::new_v4();
 
-    state.user_sockets.write().await.insert(user_id, sender);
+    state
+        .user_sockets
+        .write()
+        .await
+        .insert(user_id, sender.clone());
+
+    let messages: Vec<(Uuid, Uuid, String, time::PrimitiveDateTime)> = sqlx::query_as(
+        r#"
+        SELECT message_id, user_id, text, created_at 
+        FROM messages 
+        WHERE room_id = $1 
+        ORDER BY created_at ASC
+        "#,
+    )
+    .bind(room_id)
+    .fetch_all(&state.postgres)
+    .await
+    .unwrap_or_default();
+
+    for (_, user_id, text, created_at) in messages {
+        let msg = format!("{}: {} (at: {})", user_id, text, created_at);
+        if let Err(e) = socket.send(Message::Text(msg)).await {
+            eprintln!("Failed to send message: {:?}", e);
+        }
+    }
 
     while let Some(Ok(msg)) = socket.next().await {
         if let Message::Text(text) = msg {
