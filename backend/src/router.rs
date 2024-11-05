@@ -9,8 +9,10 @@ use http::HeaderValue;
 use http::Method;
 use tower_http::cors::CorsLayer;
 
-use crate::auth::{delete_user, edit_user, login, logout, register, validate_session};
-use crate::rooms::{create_room, delete_room, edit_room, list_rooms};
+use crate::auth::{
+    delete_user, edit_user, get_all_users, login, logout, register, validate_session,
+};
+use crate::rooms::{create_room, delete_room, edit_room, join_room, list_rooms};
 
 pub fn create_api_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -21,13 +23,15 @@ pub fn create_api_router(state: AppState) -> Router {
 
     let rooms_router = Router::new()
         .route("/", get(list_rooms).post(create_room))
+        .route("/", post(join_room))
         .route("/:room_id", put(edit_room).delete(delete_room));
 
     let auth_router = Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/logout", get(logout))
-        .route("/users", put(edit_user).delete(delete_user));
+        .route("/users", put(edit_user).delete(delete_user))
+        .route("/get_all_users", get(get_all_users));
 
     Router::new()
         // nest protected routes here

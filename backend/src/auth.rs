@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 use axum_extra::extract::cookie::{Cookie, PrivateCookieJar, SameSite};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use time::Duration;
 use uuid::Uuid;
@@ -30,6 +30,13 @@ pub struct LoginDetails {
 pub struct UpdateUserDetails {
     pub name: Option<String>,
     pub password: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct UserInfo {
+    pub id: Uuid,
+    pub name: String,
+    pub email: String,
 }
 
 pub async fn register(
@@ -92,6 +99,21 @@ pub async fn login(
         }
 
         Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+pub async fn get_all_users(State(state): State<AppState>) -> impl IntoResponse {
+    let query = sqlx::query_as!(UserInfo, "SELECT id, name, email FROM users")
+        .fetch_all(&state.postgres)
+        .await;
+
+    match query {
+        Ok(users) => Json(users).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to retrieve users: {}", e),
+        )
+            .into_response(),
     }
 }
 
