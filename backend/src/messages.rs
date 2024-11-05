@@ -39,6 +39,10 @@ async fn handle_socket(mut socket: WebSocket, room_id: Uuid, user_id: Uuid, stat
         .write()
         .await
         .insert(user_id, sender.clone());
+    state.user_status.write().await.insert(user_id, true);
+
+    let online_message = Message::Text(format!("User {} is online", user_id));
+    broadcast_status_change(&state, user_id, online_message).await;
 
     let messages: Vec<(Uuid, Uuid, String, time::PrimitiveDateTime)> = sqlx::query_as(
         r#"
@@ -87,4 +91,17 @@ async fn handle_socket(mut socket: WebSocket, room_id: Uuid, user_id: Uuid, stat
     }
 
     state.user_sockets.write().await.remove(&user_id);
+    state.user_status.write().await.remove(&user_id);
+
+    let offline_message = Message::Text(format!("User {} is offline", user_id));
+    broadcast_status_change(&state, user_id, offline_message).await;
+}
+
+async fn broadcast_status_change(state: &AppState, user_id: Uuid, message: Message) {
+    let sockets = state.user_sockets.read().await;
+    for (&uid, tx) in sockets.iter() {
+        if uid != user_id {
+            let _ = tx.send(message.clone());
+        }
+    }
 }

@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
+use uuid::Uuid;
 
 mod auth;
 mod messages;
@@ -29,6 +30,7 @@ pub struct AppState {
     pub domain: String,
     pub key: Key,
     pub user_sockets: Arc<UserSockets>,
+    pub user_status: Arc<RwLock<HashMap<Uuid, bool>>>,
 }
 
 impl FromRef<AppState> for Key {
@@ -61,6 +63,7 @@ async fn main() {
         domain,
         key: Key::generate(),
         user_sockets: Arc::new(RwLock::new(HashMap::new())),
+        user_status: Arc::new(RwLock::new(HashMap::new())),
     };
 
     let api_router = create_api_router(state.clone());

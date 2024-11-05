@@ -44,6 +44,7 @@ async fn new_test_app() -> TestServer {
         domain,
         key: Key::generate(),
         user_sockets: Arc::new(RwLock::new(HashMap::new())),
+        user_status: Arc::new(RwLock::new(HashMap::new())),
     };
 
     let api_router = create_api_router(state);
