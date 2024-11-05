@@ -27,7 +27,7 @@ pub fn create_api_router(state: AppState) -> Router {
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/logout", get(logout))
-        .route("/users/:user_id", put(edit_user).delete(delete_user));
+        .route("/users", put(edit_user).delete(delete_user));
 
     Router::new()
         // nest protected routes here

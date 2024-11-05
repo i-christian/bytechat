@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Request, State},
+    extract::{Request, State},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
@@ -95,6 +95,29 @@ pub async fn login(
     }
 }
 
+pub async fn get_user_id(jar: PrivateCookieJar, State(state): State<AppState>) -> Option<Uuid> {
+    if let Some(cookie) = jar.get("sessionid") {
+        if let Ok(session_id) = Uuid::parse_str(cookie.value()) {
+            let query = sqlx::query("SELECT user_id FROM sessions WHERE session_id = $1")
+                .bind(session_id)
+                .fetch_one(&state.postgres)
+                .await;
+
+            match query {
+                Ok(record) => {
+                    let user_id = record.get("user_id");
+                    Some(user_id)
+                }
+                Err(_) => None,
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+
 pub async fn logout(
     State(state): State<AppState>,
     jar: PrivateCookieJar,
@@ -144,9 +167,13 @@ pub async fn validate_session(
 
 pub async fn edit_user(
     State(state): State<AppState>,
-    Path(user_id): Path<Uuid>,
+    jar: PrivateCookieJar,
     Json(details): Json<UpdateUserDetails>,
 ) -> impl IntoResponse {
+    let Some(user_id) = get_user_id(jar, State(state.clone())).await else {
+        return (StatusCode::FORBIDDEN, "Unauthorized").into_response();
+    };
+
     let hashed_password = details
         .password
         .as_ref()
@@ -177,8 +204,12 @@ pub async fn edit_user(
 
 pub async fn delete_user(
     State(state): State<AppState>,
-    Path(user_id): Path<Uuid>,
+    jar: PrivateCookieJar,
 ) -> impl IntoResponse {
+    let Some(user_id) = get_user_id(jar, State(state.clone())).await else {
+        return (StatusCode::FORBIDDEN, "Unauthorized").into_response();
+    };
+
     let query = sqlx::query("DELETE FROM users WHERE id = $1")
         .bind(user_id)
         .execute(&state.postgres);
