@@ -7,6 +7,7 @@ use axum::{
 };
 use axum_extra::extract::cookie::{Cookie, PrivateCookieJar, SameSite};
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use sqlx::Row;
 use time::Duration;
 use uuid::Uuid;
@@ -32,7 +33,7 @@ pub struct UpdateUserDetails {
     pub password: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct UserInfo {
     pub id: Uuid,
     pub name: String,
@@ -103,7 +104,7 @@ pub async fn login(
 }
 
 pub async fn get_all_users(State(state): State<AppState>) -> impl IntoResponse {
-    let query = sqlx::query_as!(UserInfo, "SELECT id, name, email FROM users")
+    let query = sqlx::query_as::<_, UserInfo>("SELECT id, name, email FROM users")
         .fetch_all(&state.postgres)
         .await;
 
