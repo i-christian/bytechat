@@ -4,9 +4,12 @@ use axum::{
     routing::{get, post, put},
     Router,
 };
-use http::header::{ACCEPT, AUTHORIZATION, ORIGIN};
 use http::HeaderValue;
 use http::Method;
+use http::{
+    header::{ACCEPT, AUTHORIZATION, ORIGIN},
+    StatusCode,
+};
 use tower_http::cors::CorsLayer;
 
 use crate::auth::{
@@ -42,6 +45,7 @@ pub fn create_api_router(state: AppState) -> Router {
     Router::new()
         // nest protected routes here
         .nest("/rooms", rooms_router)
+        .route("/check", get(auth_check))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             validate_session,
@@ -50,6 +54,10 @@ pub fn create_api_router(state: AppState) -> Router {
         .route("/health", get(hello_world))
         .with_state(state)
         .layer(cors)
+}
+
+pub async fn auth_check() -> StatusCode {
+    StatusCode::OK
 }
 
 pub async fn hello_world() -> &'static str {
