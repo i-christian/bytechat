@@ -1,5 +1,4 @@
 import { createContext, useContext, createSignal, Component, JSX } from "solid-js";
-import { useNavigate } from "@solidjs/router";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -10,20 +9,19 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>();
 
 export const AuthProvider: Component<{ children: JSX.Element }> = (props) => {
-  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = createSignal(false);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await fetch(`//${window.location.host}/api/auth/login`, {
         method: "POST",
+        mode: "cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
         setIsAuthenticated(true);
-        navigate("/");
       } else {
         alert("Login failed");
       }
@@ -36,7 +34,6 @@ export const AuthProvider: Component<{ children: JSX.Element }> = (props) => {
     fetch(`//${window.location.host}/api/auth/logout`, { method: "GET", credentials: "include" })
       .then(() => {
         setIsAuthenticated(false);
-        navigate("/login");
       })
       .catch((error) => console.error("Logout error:", error));
   };
