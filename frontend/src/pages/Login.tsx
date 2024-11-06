@@ -1,23 +1,59 @@
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { useAuth } from "../contexts/AuthContext";
+import { setIsLoggedIn } from "../index";
 
 type InputEvent = Event & { target: HTMLInputElement };
 
 const Login: Component = () => {
-  const [email, setEmail] = createSignal<string>("");
-  const [pw, setPw] = createSignal<string>("");
-  const [pwVis, setPwVis] = createSignal<boolean>(false);
-  const auth = useAuth();
+  const [email, setEmail] = createSignal("");
+  const [pw, setPw] = createSignal("");
+  const [pwVis, setPwVis] = createSignal(false);
   const navigate = useNavigate();
+
+  onMount(async () => {
+    try {
+      const response = await fetch(`//${window.location.host}/api/check`, {
+        method: "GET",
+        credentials: "include"
+      });
+
+      if (response.ok) {
+        setIsLoggedIn(true);
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+    }
+  });
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    await auth?.login(email(), pw());
-    if (auth?.isAuthenticated) {
-      navigate("/");
-    } else {
-      alert("Login failed");
+    const url = `//${window.location.host}/api/auth/login`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email(),
+          password: pw(),
+        }),
+      });
+
+      if (response.ok) {
+        setIsLoggedIn(true);
+        localStorage.setItem("isLoggedIn", "true");
+        navigate("/");
+      } else {
+        alert("Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("An error occurred while logging in.");
     }
   };
 
@@ -43,7 +79,6 @@ const Login: Component = () => {
               type="email"
               name="email"
               class="text-sm placeholder-gray-500 pl-10 pr-4 rounded-md border border-gray-400 w-full py-2 focus:outline-none focus:border-black"
-              required
               value={email()}
               onInput={(e: InputEvent) => setEmail(e.target.value)}
               placeholder="Enter your email"
@@ -58,7 +93,6 @@ const Login: Component = () => {
               type={pwVis() ? "text" : "password"}
               name="password"
               class="text-sm placeholder-gray-500 pl-10 pr-4 rounded-md border border-gray-400 w-full py-2 focus:outline-none focus:border-black"
-              required
               value={pw()}
               onInput={(e: InputEvent) => setPw(e.target.value)}
               placeholder="Enter your password"

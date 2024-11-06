@@ -67,7 +67,7 @@ export default function Register() {
           </div>
 
           <label for="email" class="text-xs tracking-wide text-gray-600">
-            E-Mail Address:
+            Email:
           </label>
           <div class="relative mb-4">
             <input
