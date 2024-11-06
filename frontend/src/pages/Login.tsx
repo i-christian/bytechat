@@ -1,4 +1,4 @@
-import { Component, createSignal, onMount } from "solid-js";
+import { Component, createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { setIsLoggedIn } from "../index";
 
@@ -10,7 +10,7 @@ const Login: Component = () => {
   const [pwVis, setPwVis] = createSignal(false);
   const navigate = useNavigate();
 
-  onMount(async () => {
+  const checkAuthStatus = async () => {
     try {
       const response = await fetch(`//${window.location.host}/api/check`, {
         method: "GET",
@@ -24,7 +24,12 @@ const Login: Component = () => {
     } catch (error) {
       console.error("Auth check error:", error);
     }
-  });
+  };
+
+  if (localStorage.getItem("isLoggedIn") === "true") {
+    checkAuthStatus();
+  }
+
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();

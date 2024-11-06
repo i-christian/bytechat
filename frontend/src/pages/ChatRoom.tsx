@@ -49,7 +49,7 @@ const ChatRoom: Component = () => {
       });
 
       if (response.status === 403) {
-        sessionStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("isLoggedin");
         setIsLoggedIn(false);
         navigate("/login");
         return;
@@ -71,11 +71,13 @@ const ChatRoom: Component = () => {
         credentials: "include",
       });
 
-      if (response.status !== 500) {
-        setIsLoggedIn(false);
-        navigate("/");
-      } else {
+      if (response.status === 500) {
         console.log("Internal server error");
+      } else {
+        setIsLoggedIn(false);
+        localStorage.setItem("isLoggedIn", "false");
+        navigate("/login");
+
       }
 
     } catch (err) {
