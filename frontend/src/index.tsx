@@ -11,23 +11,26 @@ export const [isLoggedIn, setIsLoggedIn] = createSignal(false);
 
 const App: Component = () => {
   onMount(async () => {
-    try {
-      const response = await fetch(`//${window.location.host}/api/check`, {
-        method: "GET",
-        credentials: "include"
-      });
+    if (localStorage.getItem("isLoggedIn") === "true") {
+      try {
+        const response = await fetch(`//${window.location.host}/api/check`, {
+          method: "GET",
+          credentials: "include"
+        });
 
-      if (response.ok) {
-        setIsLoggedIn(true);
-        localStorage.setItem("isLoggedIn", "true");
-      } else {
+        if (response.ok) {
+          setIsLoggedIn(true);
+          localStorage.setItem("isLoggedIn", "true");
+        } else {
+          setIsLoggedIn(false);
+          localStorage.removeItem("isLoggedIn");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
         setIsLoggedIn(false);
-        localStorage.removeItem("isLoggedIn");
       }
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setIsLoggedIn(false);
     }
+    setIsLoggedIn(false);
   });
 
   return (

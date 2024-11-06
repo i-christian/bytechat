@@ -75,7 +75,7 @@ const ChatRoom: Component = () => {
         console.log("Internal server error");
       } else {
         setIsLoggedIn(false);
-        localStorage.setItem("isLoggedIn", "false");
+        localStorage.removeItem("isLoggedIn");
         navigate("/login");
 
       }
