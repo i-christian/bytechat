@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     session_id UUID NOT NULL UNIQUE,
     user_id UUID NOT NULL UNIQUE,
-    expires TIMESTAMP WITH TIME ZONE,
+    expires TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 week',
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -51,3 +51,4 @@ CREATE INDEX IF NOT EXISTS idx_user_room ON chat_rooms(user_id, room_id);
 CREATE INDEX IF NOT EXISTS idx_room_created_at ON messages(room_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
