@@ -10,23 +10,25 @@
 
 
 ## Description
-ByteChat is a real-time chat application with a backend built in Rust (using Axum and SocketIO) and a frontend powered by SolidJS. The backend leverages Rust’s high-performance capabilities, while SocketIO provides an efficient WebSocket abstraction for low-latency, bidirectional communication.
+ByteChat is a real-time chat application with a backend built in Rust (using Axum and SocketIO) and a frontend powered by SolidJS. The backend leverages Rust’s high-performance capabilities, it also utilises WebSockets to offer a realtime communication among users of the application.
 
 ByteChat is designed for scalability and concurrency, ideal for chat applications where multiple users require instant messaging. The backend handles numerous simultaneous connections, ensuring speed and reliability with Rust’s memory safety and performance.
 
 ### Key Features
-- **Real-Time Communication**: Utilizing SocketIO over WebSockets for instant, bidirectional communication.
+- **Real-Time Communication**: Utilizing WebSockets for instant realtime, bidirectional communication.
 - **Concurrency Handling**: Rust’s async capabilities, powered by Tokio, manage numerous concurrent connections efficiently.
-- **Message Broadcasting**: Broadcasts messages to all connected clients, perfect for group chats.
+- **User Authentication**: The application utilises http only privately signed cookies to offer robust a session management and user authentication.
+- **Message Persistence**: The application uses postgresql to save messages, and user information.
 - **Robust and Scalable**: Built with Rust and Axum, ensuring a fast, secure, and scalable backend.
-- **Extensible Architecture**: Modular design allows for easy integration of additional features such as authentication, message persistence, and user management
 - **Dockerized Deployment**: Easily deploy ByteChat with Docker for a consistent environment.
 
 ## Prerequisites 📋
 - [Rust](https://www.rust-lang.org/)
 - [Axum](https://docs.rs/axum/latest/axum/)
-- [socketioxide](https://docs.rs/socketioxide/latest/socketioxide/)
+- [The WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
 - [Node.js & npm](https://nodejs.org/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [SolidJS](https://docs.solidjs.com/)
 - [Docker](https://www.docker.com/)
 
 ## How to Use 🛠️
@@ -56,7 +58,7 @@ cd bytechat
 
 ### Run the application (without Docker)
 ```
-./buid.sh or cargo run
+./buid.sh
 ```
 
 ## Contributing 🤝
@@ -74,6 +76,6 @@ I welcome contributions to improve ByteChat. Here’s how you can get started:
 ByteChat is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements 🙌
-Special thanks to the developers of Rust, Axum, and socketioxide for their excellent tools and libraries.
+Special thanks to the developers of Rust, Axum, and SolidJS for their excellent tools and libraries.
 
 Enjoy chatting with ByteChat! 🚀💬
