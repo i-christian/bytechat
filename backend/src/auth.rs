@@ -108,11 +108,10 @@ pub async fn get_user(State(state): State<AppState>, jar: PrivateCookieJar) -> i
         return (StatusCode::FORBIDDEN, "Unauthorized").into_response();
     };
 
-    let query =
-        sqlx::query_as::<_, UserInfo>("SELECT id, name, email FROM users WHERE user_id = $1")
-            .bind(user_id)
-            .fetch_one(&state.postgres)
-            .await;
+    let query = sqlx::query_as::<_, UserInfo>("SELECT id, name, email FROM users WHERE id = $1")
+        .bind(user_id)
+        .fetch_one(&state.postgres)
+        .await;
 
     match query {
         Ok(user_info) => Json(user_info).into_response(),

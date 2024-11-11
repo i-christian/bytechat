@@ -15,6 +15,24 @@ const ChatRoom: Component = () => {
   const [error, setError] = createSignal("");
   const navigate = useNavigate();
 
+  const getUser = async () => {
+    const response = await fetch(`//${window.location.host}/api/auth/user`, {
+      method: "GET",
+      credentials: "include",
+      mode: "cors",
+    });
+
+    if (response.status === 403) {
+      setIsLoggedIn(false);
+      navigate("/login");
+      return;
+    }
+    if (!response.ok) throw new Error("failed to load user information");
+
+    const data = await response.json();
+    console.log(data);
+  }
+
   const fetchRooms = async () => {
     try {
       const response = await fetch(`//${window.location.host}/api/rooms`, {
@@ -85,7 +103,8 @@ const ChatRoom: Component = () => {
     }
   };
 
-  onMount(fetchRooms);
+  // onMount(fetchRooms);
+  onMount(getUser);
 
   return (
     <div class="flex h-screen">

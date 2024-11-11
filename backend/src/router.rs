@@ -39,8 +39,7 @@ pub fn create_api_router(state: AppState) -> Router {
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/logout", get(logout))
-        .route("/user", get(get_user))
-        .route("/users", put(edit_user).delete(delete_user))
+        .route("/user", get(get_user).put(edit_user).delete(delete_user))
         .route("/get_all_users", get(get_all_users));
 
     Router::new()
