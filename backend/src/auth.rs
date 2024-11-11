@@ -103,6 +103,27 @@ pub async fn login(
     }
 }
 
+pub async fn get_user(State(state): State<AppState>, jar: PrivateCookieJar) -> impl IntoResponse {
+    let Some(user_id) = get_user_id(jar, State(state.clone())).await else {
+        return (StatusCode::FORBIDDEN, "Unauthorized").into_response();
+    };
+
+    let query =
+        sqlx::query_as::<_, UserInfo>("SELECT id, name, email FROM users WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_one(&state.postgres)
+            .await;
+
+    match query {
+        Ok(user_info) => Json(user_info).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to retrieve user information: {}", e),
+        )
+            .into_response(),
+    }
+}
+
 pub async fn get_all_users(State(state): State<AppState>) -> impl IntoResponse {
     let query = sqlx::query_as::<_, UserInfo>("SELECT id, name, email FROM users")
         .fetch_all(&state.postgres)

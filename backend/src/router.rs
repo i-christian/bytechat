@@ -13,7 +13,7 @@ use http::{
 use tower_http::cors::CorsLayer;
 
 use crate::auth::{
-    delete_user, edit_user, get_all_users, login, logout, register, validate_session,
+    delete_user, edit_user, get_all_users, get_user, login, logout, register, validate_session,
 };
 use crate::messages::websocket_handler;
 use crate::rooms::{
@@ -39,6 +39,7 @@ pub fn create_api_router(state: AppState) -> Router {
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/logout", get(logout))
+        .route("/user", get(get_user))
         .route("/users", put(edit_user).delete(delete_user))
         .route("/get_all_users", get(get_all_users));
 
