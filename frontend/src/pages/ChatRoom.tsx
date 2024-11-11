@@ -1,7 +1,8 @@
-import { Component, createSignal, onMount } from "solid-js";
+import { Component, Match, Suspense, Switch, createResource, createSignal, onMount } from "solid-js";
 import { For } from "solid-js/web";
 import { useNavigate } from "@solidjs/router";
 import { setIsLoggedIn } from "../index";
+import { getUser } from "../hooks/useFetch";
 
 interface Room {
   id: string;
@@ -14,24 +15,7 @@ const ChatRoom: Component = () => {
   const [selectedRoom, setSelectedRoom] = createSignal<Room | null>(null);
   const [error, setError] = createSignal("");
   const navigate = useNavigate();
-
-  const getUser = async () => {
-    const response = await fetch(`//${window.location.host}/api/auth/user`, {
-      method: "GET",
-      credentials: "include",
-      mode: "cors",
-    });
-
-    if (response.status === 403) {
-      setIsLoggedIn(false);
-      navigate("/login");
-      return;
-    }
-    if (!response.ok) throw new Error("failed to load user information");
-
-    const data = await response.json();
-    console.log(data);
-  }
+  const [user] = createResource(getUser)
 
   const fetchRooms = async () => {
     try {
@@ -103,16 +87,31 @@ const ChatRoom: Component = () => {
     }
   };
 
-  // onMount(fetchRooms);
-  onMount(getUser);
+  onMount(fetchRooms);
 
   return (
     <div class="flex h-screen">
       <aside class="w-1/4 bg-gray-200 p-4 border-r border-gray-300">
-        <h2 class="text-xl font-semibold mb-4">Available Rooms</h2>
+        <h2 class="text-xl text-center">
+          <Suspense fallback={<div>Loading...</div>}>
+            <Switch>
+              <Match when={user.error}>
+                <span>Error: {user.error.message}</span>
+              </Match>
+              <Match when={user()}>
+                <p>{user().name}</p>
+              </Match>
+            </Switch>
+          </Suspense>
+
+        </h2>
+        <h2 class="text-xl font-semibold mb-4">Chats</h2>
         {error() && <p class="text-red-500">{error()}</p>}
-        <button onClick={logout} class="mb-4 p-2 bg-red-500 text-white rounded-lg">
-          Logout
+        <button onClick={logout}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+          </svg>
+
         </button>
         <ul class="space-y-2">
           <For each={rooms()}>
