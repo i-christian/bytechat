@@ -1,14 +1,12 @@
 package server
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
-	"time"
+	"os"
 
 	"bytechat/cmd/web"
-	"github.com/coder/websocket"
+
+	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -16,47 +14,60 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.SupressNotFound(r))
+
+	// Global middlewares
+	r.Use(middleware.CleanPath)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
+	r.Use(secureHeaders)
+	r.Use(middleware.Compress(5, "text/html", "text/css"))
 	r.Use(middleware.Recoverer)
 
+	// CORS setup
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   []string{os.Getenv("DOMAIN")},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
 
-	r.Get("/websocket", s.websocketHandler)
-
+	// Static file server
 	fileServer := http.FileServer(http.FS(web.Files))
 	r.Handle("/assets/*", fileServer)
 
+	// PUBLIC ROUTES
+	r.Group(func(r chi.Router) {
+		r.With(s.RedirectIfAuthenticated).Get("/login", templ.Handler(web.Login()).ServeHTTP)
+		r.Post("/login", s.LoginHandler)
+	})
+
+	// AUTHENTICATED USER ROUTES
+	r.Group(func(r chi.Router) {
+		r.Use(s.AuthMiddleware)
+
+		r.Get("/logout/confirm", s.LogoutConfirmHandler)
+		r.Get("/logout/cancel", s.LogoutCancelHandler)
+		r.Post("/logout", s.LogoutHandler)
+	})
+
+	// USER MANAGEMENT (ADMIN)
+	r.Route("/users", func(r chi.Router) {
+		r.Use(s.AuthMiddleware)
+		r.Use(s.RequireRoles("admin"))
+
+		// Registration routes
+		r.Get("/create", nil)
+		r.Post("/", s.Register)
+
+		// Edit routes
+		r.Get("/{id}/edit", nil)
+		r.Put("/{id}", nil)
+
+		// Delete routes
+		r.Get("/{id}/delete", nil)
+		r.Delete("/{id}", s.DeleteUser)
+	})
+
 	return r
-}
-
-func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
-	socket, err := websocket.Accept(w, r, nil)
-	if err != nil {
-		log.Printf("could not open websocket: %v", err)
-		_, _ = w.Write([]byte("could not open websocket"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	defer socket.Close(websocket.StatusGoingAway, "server closing websocket")
-
-	ctx := r.Context()
-	socketCtx := socket.CloseRead(ctx)
-
-	for {
-		payload := fmt.Sprintf("server timestamp: %d", time.Now().UnixNano())
-		err := socket.Write(socketCtx, websocket.MessageText, []byte(payload))
-		if err != nil {
-			break
-		}
-		time.Sleep(time.Second * 2)
-	}
 }
