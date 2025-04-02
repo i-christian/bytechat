@@ -1,0 +1,132 @@
+package web
+
+templ Dashboard() {
+	<!DOCTYPE html>
+	<html lang="en" class="h-screen bg-gray-100">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width,initial-scale=1"/>
+			<title>{ ProjectName() }</title>
+			<link href="/assets/css/output.css" rel="stylesheet"/>
+			<link rel="stylesheet" href="/assets/fontawesome/css/all.min.css"/>
+			<script src="/assets/js/htmx.min.js"></script>
+		</head>
+		<body
+			class="bg-gray-100 text-gray-800 font-sans h-screen"
+		>
+			<header
+				id="header"
+				class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white shadow p-4 transition-all duration-300"
+			>
+				<button id="toggle-sidebar" class="text-2xl hover:cursor-pointer">
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+					</svg>
+				</button>
+				<h1 class="text-xl ml-2 font-bold">{ ProjectName() }</h1>
+				<p>user profile information</p>
+			</header>
+			<aside id="sidebar" class="fixed z-40 h-full bg-white shadow transition-all duration-300 overflow-hidden" data-expanded="true">
+				<div class="pt-5 h-full flex flex-col">
+					user's list
+				</div>
+			</aside>
+			<main class="pt-[4rem] transition-all mx-5 my-6 duration-300">
+				<div id="content-area">
+					{ children... }
+				</div>
+			</main>
+			<div id="modal"></div>
+			<script>
+        function updateNavText(expanded) {
+          document.querySelectorAll('.nav-text').forEach(el => {
+            if(expanded) {
+              el.classList.remove('hidden');
+            } else {
+              el.classList.add('hidden');
+            }
+          });
+        }
+
+        const sidebar = document.getElementById('sidebar');
+        const contentArea = document.getElementById('content-area');
+        const toggleBtn = document.getElementById('toggle-sidebar');
+
+        function setSidebarWidth(width) {
+          document.documentElement.style.setProperty('--sidebar-width', width + 'px');
+        }
+
+        let isDesktop = window.innerWidth >= 1024;
+        let expanded = false;
+
+        function applyLayout() {
+          if (isDesktop) {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('top-16');
+            if (expanded) {
+              sidebar.classList.remove('w-20');
+              sidebar.classList.add('w-64');
+              setSidebarWidth(256);
+              document.querySelectorAll('.nav-icon').forEach(el => {
+                el.classList.remove('w-6','h-6');
+                el.classList.add('w-5','h-5');
+              });
+            } else {
+              sidebar.classList.remove('w-64');
+              sidebar.classList.add('w-20');
+              setSidebarWidth(80);
+              document.querySelectorAll('.nav-icon').forEach(el => {
+                el.classList.remove('w-5','h-5');
+                el.classList.add('w-6','h-6');
+              });
+            }
+            contentArea.style.marginLeft = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width');
+          } else {
+            contentArea.style.marginLeft = '0px';
+            sidebar.classList.remove('top-16');
+            sidebar.classList.add('top-16');
+            if (expanded) {
+              sidebar.classList.remove('-translate-x-full', 'w-20');
+              sidebar.classList.add('w-64');
+            } else {
+              sidebar.classList.remove('w-64');
+              sidebar.classList.add('w-20', '-translate-x-full');
+            }
+          }
+          updateNavText(expanded);
+        }
+
+        applyLayout();
+
+        toggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isDesktop = window.innerWidth >= 1024;
+          expanded = !expanded;
+          applyLayout();
+        });
+
+        document.addEventListener('click', (e) => {
+          if (window.innerWidth < 1024) {
+            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+              if (expanded) {
+                expanded = false;
+                applyLayout();
+              }
+            }
+          }
+        });
+
+        window.addEventListener('resize', () => {
+          isDesktop = window.innerWidth >= 1024;
+          applyLayout();
+        });
+
+		  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    			if (evt.detail.target.id === 'content-area') {
+      			document.getElementById('modal').innerHTML = '';
+    			}
+  			});
+      </script>
+		</body>
+	</html>
+}

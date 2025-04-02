@@ -1,0 +1,109 @@
+package web
+
+templ Login() {
+	<!DOCTYPE html>
+	<html lang="en" class="h-screen bg-gray-50">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ ProjectName() }</title>
+			<link href="assets/css/output.css" rel="stylesheet"/>
+			<script src="assets/js/htmx.min.js" defer></script>
+		</head>
+		<body class="h-screen bg-gray-50 flex justify-center items-center">
+			<main class="w-full max-w-lg">
+				<form
+					id="login-form"
+					hx-post="/login"
+					hx-target="#result"
+					hx-swap="innerHTML"
+					class="flex flex-col bg-white shadow-md rounded-lg p-6"
+					novalidate
+				>
+					<fieldset class="flex flex-col gap-4">
+						<legend class="text-center text-2xl font-semibold text-blue-600 mb-4">
+							Login
+						</legend>
+						<div id="result" aria-live="polite" class="text-center"></div>
+						<label for="identifier" class="flex flex-col gap-1">
+							<span class="font-medium text-gray-700">Phone Number or Username</span>
+							<input
+								type="text"
+								id="identifier"
+								name="identifier"
+								placeholder="Enter phone number or username (e.g. USR-2025-12345)"
+								pattern="([0-9]{12}|USR-\d{4}-\d{5})"
+								title="Please enter either a 12-digit phone number or a username in the format: usr-yyyy-xxxxx"
+								required
+								autocomplete="username"
+								class="border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							/>
+						</label>
+						<!-- Password Input with Toggle -->
+						<label for="password" class="flex flex-col gap-1">
+							<span class="font-medium text-gray-700">Password</span>
+							<div class="relative">
+								<input
+									type="password"
+									id="password"
+									name="password"
+									required
+									autocomplete="current-password"
+									class="border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full pr-10"
+									placeholder="Enter your password"
+								/>
+								<button
+									type="button"
+									id="toggle-password"
+									class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"
+									aria-label="Toggle password visibility"
+								>
+									<!-- Eye Icon (default visible) -->
+									<svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"></path>
+									</svg>
+									<!-- Eye Off Icon (hidden by default) -->
+									<svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A9.969 9.969 0 0112 19c-4.477 0-8.268-2.943-9.542-7 .705-2.472 2.212-4.563 4.157-5.826M6.343 6.343A9.97 9.97 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.96 9.96 0 01-1.913 3.263M15.536 15.536a3 3 0 01-4.242 0m4.242-4.242a3 3 0 00-4.242 4.242M3 3l18 18"></path>
+									</svg>
+								</button>
+							</div>
+						</label>
+						<button
+							type="submit"
+							class="bg-blue-600 text-white font-semibold rounded-md py-3 mt-4 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						>
+							Login
+						</button>
+					</fieldset>
+				</form>
+			</main>
+			<script defer>
+			document.addEventListener("DOMContentLoaded", () => {
+				const toggleButton = document.getElementById("toggle-password");
+				const passwordField = document.getElementById("password");
+				const eyeIcon = document.getElementById("eye-icon");
+				const eyeOffIcon = document.getElementById("eye-off-icon");
+
+				toggleButton.addEventListener("click", () => {
+					const isPassword = passwordField.type === "password";
+					passwordField.type = isPassword ? "text" : "password";
+					eyeIcon.classList.toggle("hidden", isPassword);
+					eyeOffIcon.classList.toggle("hidden", !isPassword);
+				});
+			});
+
+			document.addEventListener('htmx:responseError', (event) => {
+				const xhr = event.detail.xhr;
+				if (xhr.status === 401) {
+					const resultDiv = document.getElementById("result");
+					resultDiv.innerHTML = `<div class="text-red-500 text-center mt-4">${xhr.responseText}</div>`;
+				} else {
+					console.error(xhr.responseText);
+				}
+			});
+		</script>
+		</body>
+	</html>
+}
