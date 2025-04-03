@@ -15,15 +15,14 @@ type ChatRoom struct {
 }
 
 type Message struct {
-	MessageID   uuid.UUID          `json:"message_id"`
-	UserID      pgtype.UUID        `json:"user_id"`
-	RoomID      pgtype.UUID        `json:"room_id"`
-	Text        pgtype.Text        `json:"text"`
-	Multimedia  []byte             `json:"multimedia"`
-	IsRead      pgtype.Bool        `json:"is_read"`
-	DeliveredAt pgtype.Timestamptz `json:"delivered_at"`
-	ReadAt      pgtype.Timestamptz `json:"read_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	MessageID  uuid.UUID          `json:"message_id"`
+	UserID     pgtype.UUID        `json:"user_id"`
+	RoomID     pgtype.UUID        `json:"room_id"`
+	Text       pgtype.Text        `json:"text"`
+	Multimedia []byte             `json:"multimedia"`
+	IsRead     pgtype.Bool        `json:"is_read"`
+	ReadAt     pgtype.Timestamptz `json:"read_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 }
 
 type Role struct {
@@ -41,7 +40,6 @@ type Room struct {
 }
 
 type Session struct {
-	ID        uuid.UUID          `json:"id"`
 	SessionID uuid.UUID          `json:"session_id"`
 	UserID    uuid.UUID          `json:"user_id"`
 	Expires   pgtype.Timestamptz `json:"expires"`
