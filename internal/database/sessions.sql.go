@@ -12,11 +12,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createSession = `-- name: CreateSession :exec
+const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (session_id, user_id) 
 VALUES ($1, $2)
 ON CONFLICT (user_id) 
 DO UPDATE SET session_id = EXCLUDED.session_id
+RETURNING session_id
 `
 
 type CreateSessionParams struct {
@@ -24,9 +25,11 @@ type CreateSessionParams struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
-	_, err := q.db.Exec(ctx, createSession, arg.SessionID, arg.UserID)
-	return err
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createSession, arg.SessionID, arg.UserID)
+	var session_id uuid.UUID
+	err := row.Scan(&session_id)
+	return session_id, err
 }
 
 const deleteSession = `-- name: DeleteSession :exec
@@ -37,6 +40,24 @@ WHERE user_id = $1
 func (q *Queries) DeleteSession(ctx context.Context, userID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteSession, userID)
 	return err
+}
+
+const getRedirectPath = `-- name: GetRedirectPath :one
+SELECT 
+  roles.name AS role
+FROM sessions
+INNER JOIN users
+  ON sessions.user_id = users.user_id
+INNER JOIN roles 
+  ON users.role_id = roles.role_id
+WHERE session_id = $1
+`
+
+func (q *Queries) GetRedirectPath(ctx context.Context, sessionID uuid.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, getRedirectPath, sessionID)
+	var role string
+	err := row.Scan(&role)
+	return role, err
 }
 
 const getSession = `-- name: GetSession :one

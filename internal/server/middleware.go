@@ -147,10 +147,19 @@ func (s *Server) RedirectIfAuthenticated(next http.Handler) http.Handler {
 		sessionID, err := cookies.ReadEncrypted(r, "sessionid", s.SecretKey)
 		if err == nil {
 			parsedSessionID, parseErr := uuid.Parse(sessionID)
+
 			if parseErr == nil {
 				session, getSessionErr := s.queries.GetSession(r.Context(), parsedSessionID)
+
 				if getSessionErr == nil && session.Expires.Valid && session.Expires.Time.After(time.Now()) {
-					http.Redirect(w, r, "/dashboard", http.StatusFound)
+					var redirectPath string
+					if session.Role == "admin" {
+						redirectPath = "/admin"
+					} else {
+						redirectPath = "/chat"
+					}
+
+					http.Redirect(w, r, redirectPath, http.StatusFound)
 					return
 				}
 			}

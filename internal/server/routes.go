@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"bytechat/cmd/web"
+	"bytechat/cmd/web/auth"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
@@ -38,7 +39,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// PUBLIC ROUTES
 	r.Group(func(r chi.Router) {
-		r.With(s.RedirectIfAuthenticated).Get("/login", templ.Handler(web.Login()).ServeHTTP)
+		r.With(s.RedirectIfAuthenticated).Get("/login", templ.Handler(auth.Login()).ServeHTTP)
+		r.Get("/register", templ.Handler(auth.CreateUserForm()).ServeHTTP)
+		r.Post("/register", s.Register)
 		r.Post("/login", s.LoginHandler)
 	})
 
@@ -56,17 +59,23 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Use(s.AuthMiddleware)
 		r.Use(s.RequireRoles("admin"))
 
-		// Registration routes
-		r.Get("/create", nil)
-		r.Post("/", s.Register)
+		r.Get("/profile", s.userProfile)
 
 		// Edit routes
-		r.Get("/{id}/edit", nil)
-		r.Put("/{id}", nil)
+		r.Get("/{id}/edit", s.ShowEditUserForm)
+		r.Put("/{id}", s.EditUser)
 
 		// Delete routes
-		r.Get("/{id}/delete", nil)
+		r.Get("/{id}/delete", s.ShowDeleteConfirmation)
 		r.Delete("/{id}", s.DeleteUser)
+	})
+
+	// ADMIN DASHBOARD (ADMIN)
+	r.Route("/admin", func(r chi.Router) {
+		r.Use(s.AuthMiddleware)
+		r.Use(s.RequireRoles("admin"))
+
+		r.Get("/", s.ListUsers)
 	})
 
 	return r

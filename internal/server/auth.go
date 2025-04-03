@@ -48,7 +48,8 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		UserID:    user.UserID,
 	}
 
-	if err := s.queries.CreateSession(r.Context(), sessionParams); err != nil {
+	returnedSession, err := s.queries.CreateSession(r.Context(), sessionParams)
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error")
 		slog.Error("Failed to create session", "error", err.Error())
 		return
@@ -71,13 +72,22 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentSession, err := s.queries.GetRedirectPath(r.Context(), returnedSession)
+
+	var redirectPath string
+	if currentSession == "admin" {
+		redirectPath = "/admin"
+	} else {
+		redirectPath = "/chat"
+	}
+
 	if r.Header.Get("HX-Request") != "" {
-		w.Header().Set("HX-Redirect", "/dashboard")
+		w.Header().Set("HX-Redirect", redirectPath)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	http.Redirect(w, r, "/dashboard", http.StatusFound)
+	http.Redirect(w, r, redirectPath, http.StatusFound)
 }
 
 // LogoutHandler to log users out
@@ -102,7 +112,7 @@ func (s *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
 func (s *Server) LogoutConfirmHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,5 +120,5 @@ func (s *Server) LogoutConfirmHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) LogoutCancelHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/dashboard", http.StatusFound)
+	http.Redirect(w, r, "/login", http.StatusFound)
 }
