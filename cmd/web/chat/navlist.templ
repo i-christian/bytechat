@@ -1,0 +1,16 @@
+package chat
+
+templ NavList(role string) {
+	<nav class="flex-1 overflow-y-auto">
+		<ul class="space-y-1" hx-boosted="true">
+			if role == "admin" {
+				<li>
+					<a href="/admin" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-200 transition" title="Home">
+						<i class="nav-icon fas fa-users fa-lg mr-3 text-blue-600"></i>
+						<span class="nav-text text-sm">Users</span>
+					</a>
+				</li>
+			}
+		</ul>
+	</nav>
+}

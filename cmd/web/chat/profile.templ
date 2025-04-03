@@ -1,0 +1,76 @@
+package chat
+
+templ UserProfile() {
+	<div
+		id="header-user-profile"
+		class="flex items-center space-x-3 cursor-pointer"
+		hx-get="/users/profile"
+		hx-trigger="load"
+		hx-target="#user-name"
+		hx-swap="innerHTML"
+	>
+		<div id="user-initials" class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-full text-xs font-semibold">
+			U
+		</div>
+		<span id="user-name" class="hidden md:inline-block text-sm font-medium">User</span>
+		<i id="header-user-icon" class="fas fa-chevron-down text-gray-600 transition-transform"></i>
+	</div>
+	<div
+		id="header-user-options"
+		role="menu"
+		class="hidden absolute right-4 mt-12 w-48 bg-white shadow rounded-md overflow-hidden z-50 transition-all duration-200"
+	>
+		<a
+			href="/settings/user"
+			role="menuitem"
+			class="block px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-500"
+		>
+			<i class="fas fa-cog fa-sm inline mr-1"></i>
+			Settings
+		</a>
+		<div class="border-t border-gray-200"></div>
+		<button
+			role="menuitem"
+			class="block w-full text-left px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-500"
+			hx-get="/logout/confirm"
+			hx-target="body"
+			hx-swap="beforeend"
+		>
+			<i class="fas fa-sign-out-alt fa-sm inline mr-1"></i>
+			Logout
+		</button>
+	</div>
+	<script>
+		let userDetails = document.querySelector("#header-user-profile");
+		userDetails.addEventListener("htmx:afterRequest", e => {
+			const el = document.querySelector("#user-name")
+			try {
+				const doc = new DOMParser().parseFromString(e.detail.xhr.responseText, "text/html");
+				const userScript = doc.getElementById("user");
+				const data = userScript && JSON.parse(userScript.textContent);
+				el.textContent = data && data.FirstName ? data.FirstName : "User";
+	
+				const initials = data.FirstName ? data.FirstName.charAt(0).toUpperCase() : "U";
+				document.getElementById("user-initials").textContent = initials;
+	
+			} catch (err) {
+				el.textContent = "User";
+			}
+		});
+	
+		document.getElementById('header-user-profile').addEventListener('click', function(e) {
+			const options = document.getElementById('header-user-options');
+			const icon = document.getElementById('header-user-icon');
+			options.classList.toggle('hidden');
+			icon.classList.toggle('rotate-180');
+			e.stopPropagation();
+		});
+		document.addEventListener('click', function(e) {
+			const options = document.getElementById('header-user-options');
+			if (!options.classList.contains('hidden')) {
+				options.classList.add('hidden');
+				document.getElementById('header-user-icon').classList.remove('rotate-180');
+			}
+		});
+	</script>
+}

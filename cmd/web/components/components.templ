@@ -1,0 +1,20 @@
+package components
+
+import "github.com/google/uuid"
+
+type User struct {
+	UserID    uuid.UUID
+	FirstName string
+	LastName  string
+	Gender    string
+	Email     string
+	Password  string
+}
+
+templ UserDetails(user User) {
+	@templ.JSONScript("user", user)
+	<script>
+		const data = JSON.parse(document.getElementById('user').textContent);
+		localStorage.setItem("userData", JSON.stringify(data));
+	</script>
+}

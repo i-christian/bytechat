@@ -1,6 +1,12 @@
 package web
 
-templ Dashboard() {
+import "bytechat/cmd/web/chat"
+
+type DashboardUserRole struct {
+	Role string
+}
+
+templ Dashboard(user DashboardUserRole) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-screen bg-gray-100">
 		<head>
@@ -24,11 +30,11 @@ templ Dashboard() {
 					</svg>
 				</button>
 				<h1 class="text-xl ml-2 font-bold">{ ProjectName() }</h1>
-				<p>user profile information</p>
+				@chat.UserProfile()
 			</header>
 			<aside id="sidebar" class="fixed z-40 h-full bg-white shadow transition-all duration-300 overflow-hidden" data-expanded="true">
 				<div class="pt-5 h-full flex flex-col">
-					user's list
+					@chat.NavList(user.Role)
 				</div>
 			</aside>
 			<main class="pt-[4rem] transition-all mx-5 my-6 duration-300">

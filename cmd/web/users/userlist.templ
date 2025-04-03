@@ -1,0 +1,74 @@
+package users
+
+import "bytechat/internal/database"
+import "strconv"
+
+templ UsersList(userList []database.ListUsersRow) {
+	<section id="user-list" class="container mx-auto p-4">
+		<header class="text-left font-bold capitalize my-2">
+			User Count: { strconv.Itoa(len(userList)) }
+		</header>
+		<div class="overflow-x-auto">
+			<table class="min-w-full table-auto border-collapse border border-gray-200">
+				<thead class="bg-gray-100">
+					<tr>
+						<th class="border border-gray-200 px-4 py-2 text-left">#</th>
+						<th class="border border-gray-200 px-4 py-2 text-left">Last Name</th>
+						<th class="border border-gray-200 px-4 py-2 text-left">First Name</th>
+						<th class="border border-gray-200 px-4 py-2 text-left">Gender</th>
+						<th class="border border-gray-200 px-4 py-2 text-left">Email</th>
+						<th class="border border-gray-200 px-4 py-2 text-left">Role</th>
+						<th class="border border-gray-200 px-4 py-2 text-left">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="user-table-body" class="divide-y divide-gray-200">
+					for idx, user := range userList {
+						<tr>
+							<td class="border border-gray-200 px-4 py-2">{ strconv.Itoa(idx + 1) }</td>
+							<td class="border border-gray-200 px-4 py-2">{ user.LastName }</td>
+							<td class="border border-gray-200 px-4 py-2">{ user.FirstName }</td>
+							<td class="border border-gray-200 px-4 py-2">{ user.Gender }</td>
+							<td class="border border-gray-200 px-4 py-2">{ user.Email }</td>
+							<td class="border border-gray-200 px-4 py-2">{ user.Role }</td>
+							<td class="border border-gray-200 px-4 py-2">
+								<div class="flex space-x-2">
+									if user.Role == "admin" {
+										<button
+											class="flex items-center px-2 py-1 text-sm text-white bg-gray-400 rounded-md cursor-not-allowed"
+											disabled
+										>
+											<i class="fas fa-edit mr-1"></i> Edit
+										</button>
+										<button
+											class="flex items-center px-2 py-1 text-sm text-white bg-gray-400 rounded-md cursor-not-allowed"
+											disabled
+										>
+											<i class="fas fa-trash mr-1"></i> Delete
+										</button>
+									} else {
+										<button
+											class="flex items-center px-2 py-1 text-sm text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none"
+											hx-get={ "/users/" + user.UserID.String() + "/edit" }
+											hx-target="#content-area"
+											hx-swap="innerHTML"
+										>
+											<i class="fas fa-edit mr-1"></i> Edit
+										</button>
+										<button
+											class="flex items-center px-2 py-1 text-sm text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none"
+											hx-get={ "/users/" + user.UserID.String() + "/delete" }
+											hx-target="#modal"
+											hx-swap="innerHTML"
+										>
+											<i class="fas fa-trash mr-1"></i> Delete
+										</button>
+									}
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</section>
+}
