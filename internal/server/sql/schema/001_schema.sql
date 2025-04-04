@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- Create Rooms Table
 CREATE TABLE IF NOT EXISTS rooms (
     room_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
     room_type VARCHAR(50) NOT NULL CHECK (room_type IN ('public', 'private')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

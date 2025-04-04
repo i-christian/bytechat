@@ -1,9 +1,9 @@
 -- +goose Up
-INSERT INTO roles (name, description)
-VALUES 
+insert into roles (name, description)
+values
     ('admin', 'Full access to the system'),
     ('user', 'normal users who can send and receive messages')
-ON CONFLICT (name) DO NOTHING;
+on conflict (name) do nothing;
 
 -- +goose Down
-DELETE FROM roles;
+delete from roles;
