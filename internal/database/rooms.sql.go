@@ -43,6 +43,22 @@ func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
 	return err
 }
 
+const leaveRoom = `-- name: LeaveRoom :exec
+delete from chat_rooms 
+where user_id = $1
+and room_id =  $2
+`
+
+type LeaveRoomParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	RoomID uuid.UUID `json:"room_id"`
+}
+
+func (q *Queries) LeaveRoom(ctx context.Context, arg LeaveRoomParams) error {
+	_, err := q.db.Exec(ctx, leaveRoom, arg.UserID, arg.RoomID)
+	return err
+}
+
 const listPublicRooms = `-- name: ListPublicRooms :many
 select name, description from rooms
 `
