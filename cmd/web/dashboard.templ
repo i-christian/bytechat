@@ -1,12 +1,13 @@
 package web
 
 import "bytechat/cmd/web/chat"
+import "bytechat/internal/database"
 
 type DashboardUserRole struct {
 	Role string
 }
 
-templ Dashboard(user DashboardUserRole) {
+templ Dashboard(user DashboardUserRole, rooms []database.ListPublicRoomsRow) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-screen bg-gray-100">
 		<head>
@@ -34,7 +35,7 @@ templ Dashboard(user DashboardUserRole) {
 			</header>
 			<aside id="sidebar" class="fixed z-40 h-full bg-white shadow transition-all duration-300 overflow-hidden" data-expanded="true">
 				<div class="pt-5 h-full flex flex-col">
-					@chat.NavList(user.Role)
+					@chat.NavList(user.Role, rooms)
 				</div>
 			</aside>
 			<main class="pt-[4rem] transition-all mx-5 my-6 duration-300">

@@ -150,10 +150,11 @@ func (q *Queries) LeaveRoom(ctx context.Context, arg LeaveRoomParams) error {
 }
 
 const listPublicRooms = `-- name: ListPublicRooms :many
-select name, description from rooms where room_type = 'public'
+select room_id, name, description from rooms where room_type = 'public'
 `
 
 type ListPublicRoomsRow struct {
+	RoomID      uuid.UUID   `json:"room_id"`
 	Name        string      `json:"name"`
 	Description pgtype.Text `json:"description"`
 }
@@ -167,7 +168,7 @@ func (q *Queries) ListPublicRooms(ctx context.Context) ([]ListPublicRoomsRow, er
 	items := []ListPublicRoomsRow{}
 	for rows.Next() {
 		var i ListPublicRoomsRow
-		if err := rows.Scan(&i.Name, &i.Description); err != nil {
+		if err := rows.Scan(&i.RoomID, &i.Name, &i.Description); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

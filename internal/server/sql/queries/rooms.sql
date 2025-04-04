@@ -16,7 +16,7 @@ insert into rooms(name, description, room_type)
 values ($1, $2, $3);
 
 -- name: ListPublicRooms :many
-select name, description from rooms where room_type = 'public';
+select room_id, name, description from rooms where room_type = 'public';
 
 -- name: JoinRoom :exec
 insert into chat_rooms(user_id, room_id) 

@@ -78,5 +78,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Get("/", s.ListUsers)
 	})
 
+	// CHAT PAGE
+	r.Route("/chat", func(r chi.Router) {
+		r.Use(s.AuthMiddleware)
+
+		r.Get("/{id}", nil)
+	})
+
 	return r
 }
