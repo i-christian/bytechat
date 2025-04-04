@@ -32,11 +32,10 @@ type Role struct {
 }
 
 type Room struct {
-	RoomID      uuid.UUID          `json:"room_id"`
-	Name        string             `json:"name"`
-	Description pgtype.Text        `json:"description"`
-	RoomType    string             `json:"room_type"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	RoomID      uuid.UUID   `json:"room_id"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+	RoomType    string      `json:"room_type"`
 }
 
 type Session struct {
@@ -53,6 +52,7 @@ type User struct {
 	Email     string             `json:"email"`
 	Password  string             `json:"password"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Status    string             `json:"status"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	RoleID    uuid.UUID          `json:"role_id"`
 }

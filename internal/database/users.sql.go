@@ -22,7 +22,7 @@ values (
     (select role_id from roles where name = $6)
 )
 on conflict (email) do nothing
-returning user_id, last_name, first_name, gender, email, password, created_at, updated_at, role_id
+returning user_id, last_name, first_name, gender, email, password, created_at, status, updated_at, role_id
 `
 
 type CreateUserParams struct {
@@ -52,6 +52,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.Password,
 		&i.CreatedAt,
+		&i.Status,
 		&i.UpdatedAt,
 		&i.RoleID,
 	)

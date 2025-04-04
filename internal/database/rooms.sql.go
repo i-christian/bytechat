@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -25,4 +26,83 @@ type CreateRoomParams struct {
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 	_, err := q.db.Exec(ctx, createRoom, arg.Name, arg.Description, arg.RoomType)
 	return err
+}
+
+const joinRoom = `-- name: JoinRoom :exec
+insert into chat_rooms(user_id, room_id) 
+values ($1, $2)
+`
+
+type JoinRoomParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	RoomID uuid.UUID `json:"room_id"`
+}
+
+func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
+	_, err := q.db.Exec(ctx, joinRoom, arg.UserID, arg.RoomID)
+	return err
+}
+
+const listPublicRooms = `-- name: ListPublicRooms :many
+select name, description from rooms
+`
+
+type ListPublicRoomsRow struct {
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+}
+
+func (q *Queries) ListPublicRooms(ctx context.Context) ([]ListPublicRoomsRow, error) {
+	rows, err := q.db.Query(ctx, listPublicRooms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPublicRoomsRow{}
+	for rows.Next() {
+		var i ListPublicRoomsRow
+		if err := rows.Scan(&i.Name, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUsersInRoom = `-- name: ListUsersInRoom :many
+select 
+    users.last_name || ' ' || users.first_name as full_name,
+    users.status
+from users
+join chat_rooms using(user_id)
+join rooms using (room_id)
+where rooms.room_id = $1
+`
+
+type ListUsersInRoomRow struct {
+	FullName interface{} `json:"full_name"`
+	Status   string      `json:"status"`
+}
+
+func (q *Queries) ListUsersInRoom(ctx context.Context, roomID uuid.UUID) ([]ListUsersInRoomRow, error) {
+	rows, err := q.db.Query(ctx, listUsersInRoom, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersInRoomRow{}
+	for rows.Next() {
+		var i ListUsersInRoomRow
+		if err := rows.Scan(&i.FullName, &i.Status); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

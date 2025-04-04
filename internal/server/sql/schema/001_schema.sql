@@ -16,6 +16,7 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'offline' CHECK (status IN ('online', 'offline')),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     role_id UUID NOT NULL,
     CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE RESTRICT
@@ -35,8 +36,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
-    room_type VARCHAR(50) NOT NULL CHECK (room_type IN ('public', 'private')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    room_type VARCHAR(50) NOT NULL CHECK (room_type IN ('public', 'private'))
 );
 
 -- Create ChatRooms Linking Table (for Many-to-Many relationship between Users and Rooms)
