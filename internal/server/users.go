@@ -73,6 +73,8 @@ func (s *Server) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
+
+	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
 // userProfile handler method returns user current logged in user details
