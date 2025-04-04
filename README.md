@@ -86,11 +86,6 @@ make clean
   docker compose down --remove-orphans
 ```
 
-### Run the application (without Docker)
-```
-./buid.sh
-```
-
 ## Contributing 🤝
 
 I welcome contributions to improve ByteChat. Here’s how you can get started:

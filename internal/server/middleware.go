@@ -156,7 +156,7 @@ func (s *Server) RedirectIfAuthenticated(next http.Handler) http.Handler {
 					if session.Role == "admin" {
 						redirectPath = "/admin"
 					} else {
-						redirectPath = "/chat"
+						redirectPath = "/"
 					}
 
 					http.Redirect(w, r, redirectPath, http.StatusFound)

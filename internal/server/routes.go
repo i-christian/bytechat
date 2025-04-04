@@ -49,17 +49,17 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 
+		r.Get("/", s.showChatPage)
 		r.Get("/logout/confirm", s.LogoutConfirmHandler)
 		r.Get("/logout/cancel", s.LogoutCancelHandler)
 		r.Post("/logout", s.LogoutHandler)
+		r.Get("/profile", s.userProfile)
 	})
 
 	// USER MANAGEMENT (ADMIN)
 	r.Route("/users", func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 		r.Use(s.RequireRoles("admin"))
-
-		r.Get("/profile", s.userProfile)
 
 		// Edit routes
 		r.Get("/{id}/edit", s.ShowEditUserForm)

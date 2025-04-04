@@ -78,7 +78,7 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if currentSession == "admin" {
 		redirectPath = "/admin"
 	} else {
-		redirectPath = "/chat"
+		redirectPath = "/"
 	}
 
 	if r.Header.Get("HX-Request") != "" {
