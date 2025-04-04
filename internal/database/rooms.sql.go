@@ -12,20 +12,110 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createRoom = `-- name: CreateRoom :exec
+const createPublicRoom = `-- name: CreatePublicRoom :exec
 insert into rooms(name, description, room_type) 
 values ($1, $2, $3)
 `
 
-type CreateRoomParams struct {
+type CreatePublicRoomParams struct {
 	Name        string      `json:"name"`
 	Description pgtype.Text `json:"description"`
 	RoomType    string      `json:"room_type"`
 }
 
-func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
-	_, err := q.db.Exec(ctx, createRoom, arg.Name, arg.Description, arg.RoomType)
+func (q *Queries) CreatePublicRoom(ctx context.Context, arg CreatePublicRoomParams) error {
+	_, err := q.db.Exec(ctx, createPublicRoom, arg.Name, arg.Description, arg.RoomType)
 	return err
+}
+
+const getPrivateRooms = `-- name: GetPrivateRooms :many
+select users.first_name || ' ' || users.last_name as my_name,
+    rooms.room_id
+from users 
+join chat_rooms on users.user_id = chat_rooms.user_id
+join rooms on chat_rooms.room_id = rooms.room_id
+where users.user_id = $1
+and rooms.room_type = 'private'
+order by rooms.room_id
+`
+
+type GetPrivateRoomsRow struct {
+	MyName interface{} `json:"my_name"`
+	RoomID uuid.UUID   `json:"room_id"`
+}
+
+func (q *Queries) GetPrivateRooms(ctx context.Context, userID uuid.UUID) ([]GetPrivateRoomsRow, error) {
+	rows, err := q.db.Query(ctx, getPrivateRooms, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPrivateRoomsRow{}
+	for rows.Next() {
+		var i GetPrivateRoomsRow
+		if err := rows.Scan(&i.MyName, &i.RoomID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUsersInRoom = `-- name: GetUsersInRoom :many
+select 
+    users.last_name || ' ' || users.first_name as full_name,
+    users.status
+from users
+join chat_rooms using(user_id)
+join rooms using (room_id)
+where rooms.room_id = $1
+`
+
+type GetUsersInRoomRow struct {
+	FullName interface{} `json:"full_name"`
+	Status   string      `json:"status"`
+}
+
+func (q *Queries) GetUsersInRoom(ctx context.Context, roomID uuid.UUID) ([]GetUsersInRoomRow, error) {
+	rows, err := q.db.Query(ctx, getUsersInRoom, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUsersInRoomRow{}
+	for rows.Next() {
+		var i GetUsersInRoomRow
+		if err := rows.Scan(&i.FullName, &i.Status); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const initiatePrivateRoom = `-- name: InitiatePrivateRoom :one
+select from create_private_room($1, $2)
+`
+
+type InitiatePrivateRoomParams struct {
+	UserA uuid.UUID `json:"user_a"`
+	UserB uuid.UUID `json:"user_b"`
+}
+
+type InitiatePrivateRoomRow struct {
+}
+
+func (q *Queries) InitiatePrivateRoom(ctx context.Context, arg InitiatePrivateRoomParams) (InitiatePrivateRoomRow, error) {
+	row := q.db.QueryRow(ctx, initiatePrivateRoom, arg.UserA, arg.UserB)
+	var i InitiatePrivateRoomRow
+	err := row.Scan()
+	return i, err
 }
 
 const joinRoom = `-- name: JoinRoom :exec
@@ -60,7 +150,7 @@ func (q *Queries) LeaveRoom(ctx context.Context, arg LeaveRoomParams) error {
 }
 
 const listPublicRooms = `-- name: ListPublicRooms :many
-select name, description from rooms
+select name, description from rooms where room_type = 'public'
 `
 
 type ListPublicRoomsRow struct {
@@ -78,41 +168,6 @@ func (q *Queries) ListPublicRooms(ctx context.Context) ([]ListPublicRoomsRow, er
 	for rows.Next() {
 		var i ListPublicRoomsRow
 		if err := rows.Scan(&i.Name, &i.Description); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listUsersInRoom = `-- name: ListUsersInRoom :many
-select 
-    users.last_name || ' ' || users.first_name as full_name,
-    users.status
-from users
-join chat_rooms using(user_id)
-join rooms using (room_id)
-where rooms.room_id = $1
-`
-
-type ListUsersInRoomRow struct {
-	FullName interface{} `json:"full_name"`
-	Status   string      `json:"status"`
-}
-
-func (q *Queries) ListUsersInRoom(ctx context.Context, roomID uuid.UUID) ([]ListUsersInRoomRow, error) {
-	rows, err := q.db.Query(ctx, listUsersInRoom, roomID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListUsersInRoomRow{}
-	for rows.Next() {
-		var i ListUsersInRoomRow
-		if err := rows.Scan(&i.FullName, &i.Status); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
