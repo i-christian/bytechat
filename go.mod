@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/a-h/templ v0.3.857
+	github.com/coder/websocket v1.8.13
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-chi/cors v1.2.1
 	github.com/google/uuid v1.6.0
@@ -13,6 +14,7 @@ require (
 	github.com/pressly/goose/v3 v3.24.2
 	golang.org/x/crypto v0.36.0
 	golang.org/x/text v0.23.0
+	golang.org/x/time v0.11.0
 )
 
 require (
