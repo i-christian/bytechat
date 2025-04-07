@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS chat_rooms (
 -- Create Messages Table
 CREATE TABLE IF NOT EXISTS messages (
     message_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
-    room_id UUID REFERENCES rooms(room_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    room_id UUID NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
     text TEXT,
     multimedia BYTEA,                                     
     is_read BOOLEAN DEFAULT FALSE,

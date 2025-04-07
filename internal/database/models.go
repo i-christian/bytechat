@@ -16,8 +16,8 @@ type ChatRoom struct {
 
 type Message struct {
 	MessageID  uuid.UUID          `json:"message_id"`
-	UserID     pgtype.UUID        `json:"user_id"`
-	RoomID     pgtype.UUID        `json:"room_id"`
+	UserID     uuid.UUID          `json:"user_id"`
+	RoomID     uuid.UUID          `json:"room_id"`
 	Text       pgtype.Text        `json:"text"`
 	Multimedia []byte             `json:"multimedia"`
 	IsRead     pgtype.Bool        `json:"is_read"`

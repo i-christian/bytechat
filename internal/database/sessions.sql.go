@@ -65,6 +65,8 @@ SELECT
   sessions.user_id,
   sessions.session_id,
   roles.name AS role,
+  users.first_name,
+  users.last_name,
   sessions.expires
 FROM sessions
 INNER JOIN users
@@ -78,6 +80,8 @@ type GetSessionRow struct {
 	UserID    uuid.UUID          `json:"user_id"`
 	SessionID uuid.UUID          `json:"session_id"`
 	Role      string             `json:"role"`
+	FirstName string             `json:"first_name"`
+	LastName  string             `json:"last_name"`
 	Expires   pgtype.Timestamptz `json:"expires"`
 }
 
@@ -88,6 +92,8 @@ func (q *Queries) GetSession(ctx context.Context, sessionID uuid.UUID) (GetSessi
 		&i.UserID,
 		&i.SessionID,
 		&i.Role,
+		&i.FirstName,
+		&i.LastName,
 		&i.Expires,
 	)
 	return i, err

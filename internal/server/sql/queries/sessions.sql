@@ -10,6 +10,8 @@ SELECT
   sessions.user_id,
   sessions.session_id,
   roles.name AS role,
+  users.first_name,
+  users.last_name,
   sessions.expires
 FROM sessions
 INNER JOIN users
