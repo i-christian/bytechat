@@ -61,11 +61,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Use(s.AuthMiddleware)
 		r.Use(s.RequireRoles("admin"))
 
-		// Edit routes
 		r.Get("/{id}/edit", s.ShowEditUserForm)
 		r.Put("/{id}", s.EditUser)
 
-		// Delete routes
 		r.Get("/{id}/delete", s.ShowDeleteConfirmation)
 		r.Delete("/{id}", s.DeleteUser)
 	})
@@ -82,7 +80,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Route("/chat", func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 
-		r.Get("/{id}", nil)
+		r.Get("/{room_id}", nil)
+		r.Get("/ws/room/{room_id}", s.handleWebSocket)
 	})
 
 	return r

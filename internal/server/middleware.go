@@ -22,8 +22,10 @@ const (
 
 // User represents the authenticated user along with their role.
 type User struct {
-	Role   string
-	UserID uuid.UUID
+	Role      string
+	FirstName string
+	LastName  string
+	UserID    uuid.UUID
 }
 
 // refreshSession method updates a near session in the database if its near expiry
@@ -103,8 +105,10 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		user := User{
-			UserID: session.UserID,
-			Role:   session.Role,
+			UserID:    session.UserID,
+			Role:      session.Role,
+			LastName:  session.FirstName,
+			FirstName: session.FirstName,
 		}
 
 		r = r.WithContext(context.WithValue(r.Context(), userContextKey, user))

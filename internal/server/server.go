@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"bytechat/internal/database"
@@ -17,17 +18,30 @@ import (
 	"github.com/google/uuid"
 	"github.com/pressly/goose/v3"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/time/rate"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
 )
 
+// subscriber represents a WebSocket client connected to a specific room.
+type subscriber struct {
+	msgs      chan []byte
+	closeSlow func()
+	userID    uuid.UUID
+	roomID    uuid.UUID
+}
+
 type Server struct {
-	queries   *database.Queries
-	conn      *pgxpool.Pool
-	SecretKey []byte
-	port      int
+	queries                 *database.Queries
+	conn                    *pgxpool.Pool
+	publishLimiter          *rate.Limiter
+	subscribersByRoom       map[uuid.UUID]map[*subscriber]struct{}
+	SecretKey               []byte
+	port                    int
+	subscriberMessageBuffer int
+	subscribersMu           sync.Mutex
 }
 
 //go:embed sql/schema/*.sql
@@ -84,10 +98,12 @@ func NewServer() (*Server, *http.Server) {
 	createSuperUser(ctx, generatedQeries)
 
 	AppServer := &Server{
-		port:      port,
-		conn:      conn,
-		queries:   generatedQeries,
-		SecretKey: SecretKey,
+		port:                    port,
+		conn:                    conn,
+		queries:                 generatedQeries,
+		SecretKey:               SecretKey,
+		subscriberMessageBuffer: 16,
+		publishLimiter:          rate.NewLimiter(rate.Every(time.Millisecond*100), 8), subscribersByRoom: make(map[uuid.UUID]map[*subscriber]struct{}),
 	}
 
 	// Declare Server config
