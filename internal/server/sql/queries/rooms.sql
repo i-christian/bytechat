@@ -15,6 +15,9 @@ order by rooms.room_id;
 insert into rooms(name, description, room_type) 
 values ($1, $2, $3);
 
+-- name: GetRoomDetails :one
+select name from rooms where room_id = $1;
+
 -- name: ListPublicRooms :many
 select room_id, name, description from rooms where room_type = 'public';
 
