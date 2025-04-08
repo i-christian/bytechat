@@ -4,10 +4,10 @@ import "bytechat/internal/database"
 
 templ NavList(role string, rooms []database.ListPublicRoomsRow) {
 	<nav class="flex-1 overflow-y-auto">
-		<ul class="space-y-2" hx-boosted="true">
+		<ul class="space-y-2">
 			if role == "admin" {
 				<li>
-					<a href="/admin" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Home">
+					<a href="/admin" hx-get="/admin" hx-target="#content-area" hx-swap="innerHTML" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Users">
 						<i class="nav-icon fas fa-users fa-lg mr-3 text-blue-600"></i>
 						<span class="nav-text text-sm">Users</span>
 					</a>
@@ -15,16 +15,23 @@ templ NavList(role string, rooms []database.ListPublicRoomsRow) {
 			}
 			if role != "admin" {
 				<li>
-					<a href="/dm" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Home">
+					<a href="/dm" hx-get="/dm" hx-target="#content-area" hx-swap="innerHTML" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Messages">
 						<i class="nav-icon fas fa-message fa-lg mr-3 text-blue-600"></i>
-						<span class="nav-text text-sm">Users</span>
+						<span class="nav-text text-sm">Messages</span>
 					</a>
 				</li>
 				for _, room := range rooms {
 					<li>
-						<a hx-get={ "/chat/" + room.RoomID.String() } class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition hover:cursor-pointer" title={ room.Name }>
+						<a
+							href={ templ.SafeURL("/chat/" + room.RoomID.String()) }
+							hx-get={ "/chat/" + room.RoomID.String() }
+							hx-target="#content-area"
+							hx-swap="innerHTML"
+							class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition hover:cursor-pointer"
+							title={ room.Name }
+						>
 							<i class="nav-icon fas fa-users fa-lg mr-3 text-blue-600"></i>
-							<span class="nav-text text-sm">{ room.Name } </span>
+							<span class="nav-text text-sm">{ room.Name }</span>
 						</a>
 					</li>
 				}

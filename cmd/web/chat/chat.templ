@@ -1,7 +1,194 @@
 package chat
 
-templ ChatPage() {
-	<section>
-		coming soon...
+import "time"
+import "github.com/google/uuid"
+import "strconv"
+import "bytechat/internal/database"
+
+// ChatMessageData holds data for rendering a single message
+type ChatMessageData struct {
+	Text          string
+	Sender        SenderInfo
+	Timestamp     time.Time
+	IsCurrentUser bool
+}
+
+// SenderInfo minimal sender details
+type SenderInfo struct {
+	ID        uuid.UUID
+	FirstName string
+	LastName  string
+}
+
+// ChatPageData holds necessary data for the chat page
+type ChatPageData struct {
+	RoomID          uuid.UUID
+	RoomName        string
+	InitialMessages []database.ListMessagesByRoomRow
+	CurrentUserID   uuid.UUID
+}
+
+templ ChatMessage(data ChatMessageData) {
+	<div
+		class="p-2 rounded-lg mb-2 bg-gray-200 self-start"
+		style="max-width: 75%;"
+		data-sender-id={ data.Sender.ID.String() }
+		id={ "message-" + strconv.FormatInt(data.Timestamp.UnixNano(), 10) }
+	>
+		<div class="text-xs font-semibold text-gray-600 sender-name">{ data.Sender.FirstName } { data.Sender.LastName }</div>
+		<p class="text-sm text-gray-800">{ data.Text }</p>
+		<div class="text-xs text-gray-500 text-right">{ data.Timestamp.Format("15:04") }</div>
+	</div>
+}
+
+templ ChatPage(data ChatPageData) {
+	<section
+		class="flex flex-col h-[calc(100vh-5rem)] bg-white rounded-lg shadow"
+		hx-ext="ws"
+		ws-connect={ "/chat/ws/" + data.RoomID.String() }
+		hx-swap="beforeend"
+		hx-target="#chat-messages"
+	>
+		<header class="p-4 border-b border-gray-200">
+			<h2 class="text-lg font-semibold">{ data.RoomName }</h2>
+			<span id="currentUserInfo" data-user-id={ data.CurrentUserID.String() } class="hidden"></span>
+		</header>
+		<div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col">
+			for _, msg := range data.InitialMessages {
+				@ChatMessage(ChatMessageData{
+					Text: msg.Text.String,
+					Sender: SenderInfo{
+						ID:        msg.UserID,
+						FirstName: msg.FirstName,
+						LastName:  msg.LastName,
+					},
+					Timestamp:     msg.CreatedAt.Time,
+					IsCurrentUser: msg.UserID == data.CurrentUserID,
+				})
+			}
+			<div id="message-bottom"></div>
+		</div>
+		<form
+			id="chat-form"
+			class="p-4 border-t border-gray-200"
+			hx-post={ "/chat/publish/" + data.RoomID.String() }
+			onsubmit="return false;"
+			hx-swap="none"
+		>
+			<div class="flex items-center">
+				<input
+					id="message-input"
+					type="text"
+					name="message"
+					placeholder="Type your message..."
+					required
+					class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					autocomplete="off"
+				/>
+				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+					Send
+				</button>
+			</div>
+		</form>
+		<script>
+            (function() {
+                const chatMessagesDiv = document.getElementById('chat-messages');
+                const messageBottomDiv = document.getElementById('message-bottom');
+                const chatForm = document.getElementById('chat-form');
+                const messageInput = document.getElementById('message-input');
+                const currentUserInfo = document.getElementById('currentUserInfo');
+                const currentUserID = currentUserInfo ? currentUserInfo.getAttribute('data-user-id') : null;
+
+                function scrollToBottom() {
+                    const scrollThreshold = 50;
+                    const shouldScroll = chatMessagesDiv.scrollHeight - chatMessagesDiv.scrollTop - chatMessagesDiv.clientHeight < scrollThreshold;
+
+                    if (messageBottomDiv) {
+                        messageBottomDiv.scrollIntoView({ behavior: "smooth", block: "end" });
+                    } else if (chatMessagesDiv && shouldScroll) {
+                        chatMessagesDiv.scrollTo({ top: chatMessagesDiv.scrollHeight, behavior: 'smooth' });
+                    } else if (chatMessagesDiv && !shouldScroll) {
+                    }
+                }
+
+                function adjustMessageStyle(messageElement) {
+                    if (!currentUserID || !messageElement || !messageElement.hasAttribute('data-sender-id')) {
+                        return;
+                    }
+
+                    const senderId = messageElement.getAttribute('data-sender-id');
+                    const senderNameDiv = messageElement.querySelector('.sender-name');
+
+                    if (senderId === currentUserID) {
+                        messageElement.classList.remove('bg-gray-200', 'self-start');
+                        messageElement.classList.add('bg-blue-100', 'self-end');
+                        if (senderNameDiv) {
+                            senderNameDiv.style.display = 'none';
+                        }
+                    } else {
+                        messageElement.classList.add('bg-gray-200', 'self-start');
+                        messageElement.classList.remove('bg-blue-100', 'self-end');
+                         if (senderNameDiv) {
+                            senderNameDiv.style.display = 'block';
+                        }
+                    }
+                }
+
+                scrollToBottom();
+                if (chatMessagesDiv) {
+                    chatMessagesDiv.querySelectorAll('div[data-sender-id]').forEach(adjustMessageStyle);
+                }
+
+
+                const observer = new MutationObserver((mutationsList) => {
+                    let scrolled = false;
+                    for (const mutation of mutationsList) {
+                        if (mutation.type === 'childList') {
+                            mutation.addedNodes.forEach(node => {
+                                if (node.nodeType === Node.ELEMENT_NODE) {
+                                     if (node.matches && node.matches('div[data-sender-id]')) {
+                                          adjustMessageStyle(node);
+                                          if(!scrolled) { scrollToBottom(); scrolled = true; }
+                                     } else {
+                                         const message = node.querySelector('div[data-sender-id]');
+                                         if(message) {
+                                             adjustMessageStyle(message);
+                                            if(!scrolled) { scrollToBottom(); scrolled = true; }
+                                         }
+                                     }
+                                }
+                            });
+                        }
+                    }
+                });
+
+                if (chatMessagesDiv) {
+                    observer.observe(chatMessagesDiv, { childList: true, subtree: true });
+                }
+
+                if (chatForm) {
+                     chatForm.addEventListener('htmx:afterRequest', function(evt) {
+                        if (evt.detail.requestConfig.verb === 'post' &&
+                            evt.detail.xhr.status >= 200 && evt.detail.xhr.status < 300 &&
+                            evt.detail.requestConfig.path.includes('/chat/publish/'))
+                        {
+                            if (messageInput) {
+                                messageInput.value = '';
+                                messageInput.focus();
+                            }
+                        } else if (evt.detail.failed) {
+                            console.error("Failed to send message:", evt.detail.error || evt.detail.xhr.statusText);
+                        }
+                     });
+                }
+            })();
+		</script>
 	</section>
+}
+
+templ HomePlaceholder() {
+	<div class="p-6">
+		<h1 class="text-2xl font-semibold mb-4">Welcome!</h1>
+		<p class="text-gray-600">Select a chat room from the sidebar to start messaging.</p>
+	</div>
 }
