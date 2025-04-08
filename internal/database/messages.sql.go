@@ -39,3 +39,55 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 	)
 	return i, err
 }
+
+const listMessagesByRoom = `-- name: ListMessagesByRoom :many
+select m.message_id, m.room_id, m.user_id, m.text, m.created_at, u.first_name, u.last_name
+from messages m
+join users u on m.user_id = u.user_id
+where m.room_id = $1
+order by m.created_at ASC
+limit $2
+`
+
+type ListMessagesByRoomParams struct {
+	RoomID uuid.UUID `json:"room_id"`
+	Limit  int32     `json:"limit"`
+}
+
+type ListMessagesByRoomRow struct {
+	MessageID uuid.UUID          `json:"message_id"`
+	RoomID    uuid.UUID          `json:"room_id"`
+	UserID    uuid.UUID          `json:"user_id"`
+	Text      pgtype.Text        `json:"text"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	FirstName string             `json:"first_name"`
+	LastName  string             `json:"last_name"`
+}
+
+func (q *Queries) ListMessagesByRoom(ctx context.Context, arg ListMessagesByRoomParams) ([]ListMessagesByRoomRow, error) {
+	rows, err := q.db.Query(ctx, listMessagesByRoom, arg.RoomID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMessagesByRoomRow{}
+	for rows.Next() {
+		var i ListMessagesByRoomRow
+		if err := rows.Scan(
+			&i.MessageID,
+			&i.RoomID,
+			&i.UserID,
+			&i.Text,
+			&i.CreatedAt,
+			&i.FirstName,
+			&i.LastName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

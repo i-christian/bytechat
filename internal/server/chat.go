@@ -1,12 +1,10 @@
 package server
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -19,13 +17,59 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// showChatPage renders a chat page
-func (s *Server) showChatPage(w http.ResponseWriter, r *http.Request) {
-	s.renderComponent(w, r, chat.ChatPage())
+// showDashboardHome renders a default view for the authenticated root path
+func (s *Server) showDashboardHome(w http.ResponseWriter, r *http.Request) {
+	s.renderComponent(w, r, chat.HomePlaceholder())
 }
 
 // showChatRooms renders a list of available public chatrooms
 func (s *Server) showChatRooms(w http.ResponseWriter, r *http.Request) {
+}
+
+// showSpecificChatPage renders the chat page for a given room ID.
+func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
+	roomIDStr := r.PathValue("room_id")
+	roomID, err := uuid.Parse(roomIDStr)
+	if err != nil {
+		slog.Error("Invalid room ID format", "roomID", roomIDStr, "error", err)
+		http.Error(w, "Invalid Room ID", http.StatusBadRequest)
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(User)
+	if !ok || user.UserID == uuid.Nil {
+		slog.Warn("Chat page access attempt without authentication")
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	roomDetails, err := s.queries.GetRoomDetails(r.Context(), roomID)
+	roomName := "Chat Room"
+	if err == nil {
+		roomName = roomDetails
+	} else {
+		slog.Warn("Could not fetch room details", "roomID", roomID, "error", err)
+		return
+	}
+
+	// Optional: Fetch initial messages for the room
+	initialMessages, err := s.queries.ListMessagesByRoom(r.Context(), database.ListMessagesByRoomParams{
+		RoomID: roomID,
+		Limit:  50,
+	})
+	if err != nil {
+		slog.Error("Failed to fetch initial messages", "roomID", roomID, "error", err)
+		initialMessages = []database.ListMessagesByRoomRow{}
+	}
+
+	pageData := chat.ChatPageData{
+		RoomID:          roomID,
+		RoomName:        roomName,
+		InitialMessages: initialMessages,
+		CurrentUserID:   user.UserID,
+	}
+
+	s.renderComponent(w, r, chat.ChatPage(pageData))
 }
 
 // addSubscriber registers a subscriber for a given room.
@@ -54,8 +98,8 @@ func (s *Server) deleteSubscriber(roomID uuid.UUID, sub *subscriber) {
 	}
 }
 
-// publish broadcasts a message to all subscribers in a specific room.
-func (s *Server) publish(roomID uuid.UUID, msg []byte) {
+// publish broadcasts a message (now HTML bytes) to all subscribers in a specific room.
+func (s *Server) publish(roomID uuid.UUID, msgHTML []byte) {
 	s.subscribersMu.Lock()
 	defer s.subscribersMu.Unlock()
 
@@ -65,16 +109,87 @@ func (s *Server) publish(roomID uuid.UUID, msg []byte) {
 		return
 	}
 
-	slog.Info("Publishing message", "roomID", roomID, "subscribers", len(subs))
+	slog.Info("Publishing message HTML", "roomID", roomID, "subscribers", len(subs), "html_len", len(msgHTML))
 	for sub := range subs {
+		htmlToSend := make([]byte, len(msgHTML))
+		copy(htmlToSend, msgHTML)
+
 		select {
-		case sub.msgs <- msg:
-			// Message sent successfully
+		case sub.msgs <- htmlToSend:
 		default:
-			// Subscriber's buffer is full, they are too slow.
+			slog.Warn("Subscriber channel full, closing slow connection", "userID", sub.userID, "roomID", roomID)
 			go sub.closeSlow()
 		}
 	}
+}
+
+// publishHandler reads the request body with a limit o 8192 and then publishes the received message
+func (s *Server) publishHandler(w http.ResponseWriter, r *http.Request) {
+	roomIDStr := r.PathValue("room_id")
+	roomID, err := uuid.Parse(roomIDStr)
+	if err != nil {
+		slog.Error("Invalid room ID format", "roomID", roomIDStr, "error", err)
+		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(User)
+	if !ok || user.UserID == uuid.Nil {
+		slog.Warn("Publish attempt without authentication")
+		writeError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		slog.Error("Failed to parse form", "error", err)
+		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	msgText := r.FormValue("message")
+	if msgText == "" {
+		slog.Warn("Attempted to send empty message", "userID", user.UserID, "roomID", roomID)
+		writeError(w, http.StatusBadRequest, "Message cannot be empty")
+		return
+	}
+
+	messageParams := database.CreateMessageParams{
+		UserID: user.UserID,
+		RoomID: roomID,
+		Text:   pgtype.Text{String: msgText, Valid: true},
+	}
+	dbMsg, err := s.queries.CreateMessage(r.Context(), messageParams)
+	if err != nil {
+		slog.Error("Failed to save message to DB", "userID", user.UserID, "roomID", roomID, "error", err)
+		writeError(w, http.StatusInternalServerError, "Could not save message")
+		return
+	}
+	slog.Info("Message saved to DB", "messageID", dbMsg.MessageID)
+
+	messageTimestamp := dbMsg.CreatedAt.Time
+	if messageTimestamp.IsZero() {
+		messageTimestamp = time.Now().UTC()
+	}
+
+	chatMessageData := chat.ChatMessageData{
+		Text: msgText,
+		Sender: chat.SenderInfo{
+			ID:        user.UserID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+		},
+		Timestamp:     messageTimestamp,
+		IsCurrentUser: false,
+	}
+
+	var buf bytes.Buffer
+	s.renderComponent(w, r, chat.ChatMessage(chatMessageData))
+	htmlBytes := buf.Bytes()
+
+	s.publish(roomID, htmlBytes)
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Helper function for writing with timeout
@@ -90,7 +205,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
 		slog.Error("Invalid room ID format", "roomID", roomIDStr, "error", err)
-		http.Error(w, "Invalid Room ID", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
 
@@ -132,82 +247,12 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.addSubscriber(roomID, sub)
 	defer s.deleteSubscriber(roomID, sub)
 
-	ctx := c.CloseRead(context.Background())
+	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*10)
+	defer cancel()
+
+	ctx = c.CloseRead(ctx)
 	errc := make(chan error, 1)
-
-	go func() {
-		defer close(errc)
-		for {
-			msgType, r, err := c.Reader(ctx)
-			if err != nil {
-				if websocket.CloseStatus(err) == websocket.StatusNormalClosure ||
-					websocket.CloseStatus(err) == websocket.StatusGoingAway ||
-					errors.Is(err, context.Canceled) ||
-					errors.Is(err, net.ErrClosed) {
-					slog.Info("WebSocket reader closed gracefully", "userID", sub.userID, "roomID", sub.roomID, "error", err)
-				} else {
-					slog.Error("WebSocket read error", "userID", sub.userID, "roomID", sub.roomID, "error", err)
-					errc <- err
-				}
-				return
-			}
-
-			const maxMessageSize = 8192
-			lr := io.LimitedReader{R: r, N: maxMessageSize + 1} // +1 to detect overflow
-			msgBytes, err := io.ReadAll(&lr)
-			if err != nil {
-				slog.Error("Error reading message bytes", "userID", sub.userID, "roomID", sub.roomID, "error", err)
-				continue
-			}
-			if lr.N <= 0 {
-				slog.Warn("Received message exceeds size limit", "userID", sub.userID, "roomID", sub.roomID, "limit", maxMessageSize)
-				c.Close(websocket.StatusMessageTooBig, "message too large")
-				errc <- errors.New("message too large")
-				return
-			}
-
-			if msgType == websocket.MessageText {
-				slog.Info("Received message", "userID", sub.userID, "roomID", sub.roomID, "size", len(msgBytes))
-
-				var incomingMsg struct {
-					Text string `json:"text"`
-				}
-				if err := json.Unmarshal(msgBytes, &incomingMsg); err != nil || incomingMsg.Text == "" {
-					slog.Warn("Received invalid message format or empty text", "userID", sub.userID, "roomID", sub.roomID, "data", string(msgBytes))
-					continue
-				}
-
-				messageParams := database.CreateMessageParams{
-					UserID: sub.userID,
-					RoomID: sub.roomID,
-					Text:   pgtype.Text{String: incomingMsg.Text, Valid: true},
-				}
-				dbMsg, err := s.queries.CreateMessage(ctx, messageParams)
-				if err != nil {
-					slog.Error("Failed to save message to DB", "userID", sub.userID, "roomID", sub.roomID, "error", err)
-					continue
-				}
-				slog.Info("Message saved to DB", "messageID", dbMsg.MessageID)
-
-				broadcastMsg := map[string]any{
-					"type": "message",
-					"text": incomingMsg.Text,
-					"sender": map[string]string{
-						"id":        user.UserID.String(),
-						"firstName": user.FirstName,
-						"lastName":  user.LastName,
-					},
-					"timestamp": time.Now().UTC().Format(time.RFC3339),
-				}
-				broadcastBytes, _ := json.Marshal(broadcastMsg)
-
-				s.publish(sub.roomID, broadcastBytes)
-
-			} else {
-				slog.Warn("Received non-text message type", "type", msgType, "userID", sub.userID, "roomID", sub.roomID)
-			}
-		}
-	}()
+	defer close(errc)
 
 	// Goroutine to write outgoing messages to the client
 	for {

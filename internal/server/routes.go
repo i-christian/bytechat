@@ -49,7 +49,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 
-		r.Get("/", s.showChatPage)
+		r.Get("/", s.showDashboardHome)
 		r.Get("/logout/confirm", s.LogoutConfirmHandler)
 		r.Get("/logout/cancel", s.LogoutCancelHandler)
 		r.Post("/logout", s.LogoutHandler)
@@ -80,8 +80,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Route("/chat", func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 
-		r.Get("/{room_id}", nil)
-		r.Get("/ws/room/{room_id}", s.handleWebSocket)
+		r.Get("/{room_id}", s.showSpecificChatPage)
+		r.Post("/publish/{room_id}", s.publishHandler)
+		r.Get("/ws/{room_id}", s.handleWebSocket)
 	})
 
 	return r

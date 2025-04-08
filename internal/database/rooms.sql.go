@@ -64,6 +64,17 @@ func (q *Queries) GetPrivateRooms(ctx context.Context, userID uuid.UUID) ([]GetP
 	return items, nil
 }
 
+const getRoomDetails = `-- name: GetRoomDetails :one
+select name from rooms where room_id = $1
+`
+
+func (q *Queries) GetRoomDetails(ctx context.Context, roomID uuid.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, getRoomDetails, roomID)
+	var name string
+	err := row.Scan(&name)
+	return name, err
+}
+
 const getUsersInRoom = `-- name: GetUsersInRoom :many
 select 
     users.last_name || ' ' || users.first_name as full_name,
