@@ -112,6 +112,7 @@ func (s *Server) publish(roomID uuid.UUID, msg []byte) {
 	}
 
 	slog.Info("Publishing message", "roomID", roomID, "subscribers", len(subs), "message", string(msg))
+
 	for sub := range subs {
 		select {
 		case sub.msgs <- msg:
@@ -123,7 +124,7 @@ func (s *Server) publish(roomID uuid.UUID, msg []byte) {
 	}
 }
 
-// Helper function for writing with timeout
+// Helper function for writing messages with timeout
 func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn, msg []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -242,6 +243,8 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				slog.Error("WebSocket write error", "userID", sub.userID, "roomID", sub.roomID, "error", err)
 				return
+			} else {
+				slog.Info("message sent successfully")
 			}
 		case <-ctx.Done(): // Connection closed by client or server (CloseRead)
 			slog.Info("WebSocket context done (write loop)", "userID", sub.userID, "roomID", sub.roomID, "error", ctx.Err())
