@@ -116,8 +116,6 @@ func (s *Server) publish(roomID uuid.UUID, payload broadcastPayload) {
 		return
 	}
 
-	slog.Info("Publishing data payload", "roomID", roomID, "subscribers", len(subsCopy))
-
 	for _, sub := range subsCopy {
 		select {
 		case sub.msgs <- payload:
@@ -154,8 +152,6 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 		return
 	}
-
-	slog.Info("Attempting WebSocket upgrade", "userID", user.UserID, "roomID", roomID)
 
 	c, err := websocket.Accept(w, r, nil)
 	if err != nil {
@@ -199,8 +195,6 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 
 			err = wsjson.Read(ctx, c, &incomingMsg)
-			fmt.Printf("incoming message is: %v \n", incomingMsg)
-
 			if err != nil {
 				if websocket.CloseStatus(err) == websocket.StatusNormalClosure ||
 					websocket.CloseStatus(err) == websocket.StatusGoingAway ||
@@ -223,7 +217,6 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				slog.Error("Failed to save message to DB", "userID", sub.userID, "roomID", sub.roomID, "error", err)
 				continue
 			}
-			slog.Info("Message saved to DB", "messageID", dbMsg.MessageID)
 
 			payload := broadcastPayload{
 				dbMessage: dbMsg,
@@ -274,7 +267,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				slog.Error("WebSocket write error", "userID", sub.userID, "roomID", sub.roomID, "error", err)
 				select {
 				case readErr := <-errc:
-					slog.Info("Write loop terminating due to read error", "readError", readErr)
+					slog.Error("Write loop terminating due to read error", "readError", readErr)
 				default:
 				}
 				return
@@ -283,16 +276,16 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case <-ctx.Done(): // Connection closed by client or server
-			slog.Info("WebSocket context done (write loop)", "userID", sub.userID, "roomID", sub.roomID, "error", ctx.Err())
+			slog.Error("WebSocket context done (write loop)", "userID", sub.userID, "roomID", sub.roomID, "error", ctx.Err())
 			select {
 			case readErr := <-errc:
 				if readErr != nil && !errors.Is(readErr, context.Canceled) && !errors.Is(readErr, net.ErrClosed) && websocket.CloseStatus(readErr) < 0 {
 					slog.Error("WebSocket closed due to read error", "userID", sub.userID, "roomID", sub.roomID, "error", readErr)
 				} else {
-					slog.Info("Read loop closed gracefully or context canceled", "userID", sub.userID, "roomID", sub.roomID, "error", readErr)
+					slog.Warn("Read loop closed gracefully or context canceled", "userID", sub.userID, "roomID", sub.roomID, "error", readErr)
 				}
 			default:
-				slog.Info("Write loop context done without prior read error signal", "userID", sub.userID, "roomID", sub.roomID)
+				slog.Info("Write loop context done without prior read error signal")
 			}
 			return
 
