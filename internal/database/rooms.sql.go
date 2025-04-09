@@ -65,7 +65,9 @@ func (q *Queries) GetPrivateRooms(ctx context.Context, userID uuid.UUID) ([]GetP
 }
 
 const getRoomDetails = `-- name: GetRoomDetails :one
-select name from rooms where room_id = $1
+select name from rooms
+where room_id = $1
+and room_type = 'public'
 `
 
 func (q *Queries) GetRoomDetails(ctx context.Context, roomID uuid.UUID) (string, error) {

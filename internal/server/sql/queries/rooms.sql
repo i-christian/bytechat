@@ -16,7 +16,9 @@ insert into rooms(name, description, room_type)
 values ($1, $2, $3);
 
 -- name: GetRoomDetails :one
-select name from rooms where room_id = $1;
+select name from rooms
+where room_id = $1
+and room_type = 'public';
 
 -- name: ListPublicRooms :many
 select room_id, name, description from rooms where room_type = 'public';
