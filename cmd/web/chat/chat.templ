@@ -7,10 +7,10 @@ import "bytechat/internal/database"
 
 // ChatMessageData holds data for rendering a single message
 type ChatMessageData struct {
-	Text          string
-	Sender        SenderInfo
-	Timestamp     time.Time
-	IsCurrentUser bool
+	Text          string     `json:"text"`
+	Sender        SenderInfo `json:"sender"`
+	Timestamp     time.Time  `json:"timestamp"`
+	IsCurrentUser bool       `json:"iscurrentuser"`
 }
 
 // SenderInfo minimal sender details
@@ -71,7 +71,7 @@ templ ChatPage(data ChatPageData) {
 		<form
 			id="chat-form"
 			class="p-4 border-t border-gray-200"
-			hx-post={ "/chat/publish/" + data.RoomID.String() }
+			ws-send
 			onsubmit="return false;"
 			hx-swap="none"
 		>
@@ -79,7 +79,7 @@ templ ChatPage(data ChatPageData) {
 				<input
 					id="message-input"
 					type="text"
-					name="message"
+					name="text"
 					placeholder="Type your message..."
 					required
 					class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"

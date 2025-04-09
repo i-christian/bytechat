@@ -81,7 +81,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Use(s.AuthMiddleware)
 
 		r.Get("/{room_id}", s.showSpecificChatPage)
-		r.Post("/publish/{room_id}", s.publishHandler)
+		// r.Get("/publish/{room_id}", s.publishHandler)
 		r.Get("/ws/{room_id}", s.handleWebSocket)
 	})
 
