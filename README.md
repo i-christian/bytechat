@@ -10,30 +10,46 @@
 
 
 ## Description
-ByteChat is a real-time chat application with a backend built in Rust (using Axum and SocketIO) and a frontend powered by SolidJS. The backend leverages Golang’s high-performance capabilities, it also utilises WebSockets to offer a realtime communication among users of the application.
+ByteChat is a real-time chat application demonstrating the use of WebSockets in a Go backend. The application features a server-side rendered frontend using `templ` and HTMX for dynamic updates.
 
-ByteChat is designed for scalability and concurrency, ideal for chat applications where multiple users require instant messaging. The backend handles numerous simultaneous connections, ensuring speed and reliability with Rust’s memory safety and performance.
+The primary motivation for this project was to explore and implement a clean WebSocket solution in Go for real-time communication, supporting both public chat rooms and potential private interactions.
 
-### Key Features
-- **Real-Time Communication**: Utilizing WebSockets for instant realtime, bidirectional communication.
-- **Concurrency Handling**: Golang's concurrency features.
-- **User Authentication**: The application utilises http only privately signed cookies to offer robust a session management and user authentication.
-- **Message Persistence**: The application uses postgresql to save messages, and user information.
-- **Robust and Scalable**: Built with Golang, ensuring a fast, secure, and scalable backend.
-- **Dockerized Deployment**: Easily deploy ByteChat with Docker for a consistent environment.
+## Key Features ✨
+
+* **Real-Time Communication**: Built using webSockets for instant, bidirectional messaging between users.
+* **Go Backend**: Leverages Go's performance, concurrency features, and strong typing for a reliable backend.
+* **Server-Side HTML Rendering**: Uses `templ` for type-safe Go components rendered to HTML on the server.
+* **Dynamic Frontend Updates**: Utilizes HTMX for WebSocket communication and seamless partial page updates without full page reloads.
+* **Secure User Authentication**: Implements session management using cryptographically signed, HTTP-only cookies.
+* **Message Persistence**: Stores user data, room information, and chat messages in a PostgreSQL database.
+* **Database Migrations**: Uses `goose` for managing database schema changes.
+* **Dockerized Deployment**: Comes with `docker-compose` for easy setup and deployment.
+
+## Tech Stack 🛠️
+
+* **Backend**: Go (Golang)
+* **Web Framework/Routing**: `https://go-chi.io/#/`
+* **WebSockets**: `https://github.com/coder/websocket` (websocket)
+* **Templating**: `templ` (`https://templ.guide/`)
+* **Frontend Interaction**: HTMX (`https://htmx.org/docs/#introduction`)
+* **Database**: PostgreSQL
+* **Migrations**: `goose` (`https://github.com/pressly/goose`)
+* **Containerization**: Docker & Docker Compose
 
 ## Prerequisites 📋
-- [The WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Docker](https://www.docker.com/)
 
-## Getting Started 🛠️
+* Go (version 1.21 or later recommended)
+* PostgreSQL Server
+* Docker & Docker Compose
+* `make` (for using Makefile commands)
+* `goose` CLI (The application has manages migration automatically)
 
-### Clone the Repository
-clone the `bytechat` repository to your local machine:
-```
+## Getting Started 🚀
+
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/i-christian/bytechat.git
-
 cd bytechat
 ```
 
