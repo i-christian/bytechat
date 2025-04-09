@@ -1,8 +1,8 @@
 package server
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -101,24 +101,29 @@ func (s *Server) deleteSubscriber(roomID uuid.UUID, sub *subscriber) {
 }
 
 // publish broadcasts a message (now HTML bytes) to all subscribers in a specific room.
-func (s *Server) publish(roomID uuid.UUID, msg []byte) {
+func (s *Server) publish(roomID uuid.UUID, payload broadcastPayload) {
 	s.subscribersMu.Lock()
-	defer s.subscribersMu.Unlock()
+	subsCopy := make([]*subscriber, 0)
+	if subs, ok := s.subscribersByRoom[roomID]; ok {
+		for sub := range subs {
+			subsCopy = append(subsCopy, sub)
+		}
+	}
+	s.subscribersMu.Unlock()
 
-	subs, ok := s.subscribersByRoom[roomID]
-	if !ok {
-		slog.Warn("Attempted to publish to room with no subscribers", "roomID", roomID)
+	if len(subsCopy) == 0 {
+		slog.Warn("Attempted to publish data to room with no subscribers", "roomID", roomID)
 		return
 	}
 
-	slog.Info("Publishing message", "roomID", roomID, "subscribers", len(subs), "message", string(msg))
+	slog.Info("Publishing data payload", "roomID", roomID, "subscribers", len(subsCopy))
 
-	for sub := range subs {
+	for _, sub := range subsCopy {
 		select {
-		case sub.msgs <- msg:
-			// Message sent successfully
+		case sub.msgs <- payload:
+			// Payload sent successfully
 		default:
-			// Subscriber's buffer is full, they are too slow.
+			// Subscriber's buffer is full
 			go sub.closeSlow()
 		}
 	}
@@ -163,7 +168,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	var closed bool
 
 	sub := &subscriber{
-		msgs:   make(chan []byte, s.subscriberMessageBuffer),
+		msgs:   make(chan broadcastPayload, s.subscriberMessageBuffer),
 		userID: user.UserID,
 		roomID: roomID,
 		closeSlow: func() {
@@ -218,19 +223,12 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 			slog.Info("Message saved to DB", "messageID", dbMsg.MessageID)
 
-			broadcastMsg := map[string]any{
-				"type": "message",
-				"text": incomingMsg.Text,
-				"sender": map[string]string{
-					"id":        user.UserID.String(),
-					"firstName": user.FirstName,
-					"lastName":  user.LastName,
-				},
-				"timestamp": time.Now().UTC().Format(time.RFC3339),
+			payload := broadcastPayload{
+				dbMessage: dbMsg,
+				sender:    user,
 			}
-			broadcastBytes, _ := json.Marshal(broadcastMsg)
 
-			s.publish(sub.roomID, broadcastBytes)
+			s.publish(sub.roomID, payload)
 
 		}
 	}()
@@ -238,22 +236,55 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Goroutine to write outgoing messages to the client
 	for {
 		select {
-		case msg := <-sub.msgs:
-			err := writeTimeout(ctx, time.Second*5, c, msg)
+		case payload := <-sub.msgs:
+			messageData := chat.ChatMessageData{
+				Text: payload.dbMessage.Text.String,
+				Sender: chat.SenderInfo{
+					ID:        payload.sender.UserID,
+					FirstName: payload.sender.FirstName,
+					LastName:  payload.sender.LastName,
+				},
+				Timestamp:     payload.dbMessage.CreatedAt.Time,
+				IsCurrentUser: payload.sender.UserID == sub.userID,
+			}
+
+			// Render the templ component to HTML
+			var buf bytes.Buffer
+			err := chat.ChatMessage(messageData).Render(context.Background(), &buf)
+			if err != nil {
+				slog.Error("Failed to render ChatMessage component", "userID", sub.userID, "roomID", sub.roomID, "error", err)
+				continue
+			}
+
+			// Send the rendered HTML fragment over the WebSocket
+			htmlBytes := buf.Bytes()
+			err = writeTimeout(ctx, time.Second*5, c, htmlBytes)
 			if err != nil {
 				slog.Error("WebSocket write error", "userID", sub.userID, "roomID", sub.roomID, "error", err)
+				select {
+				case readErr := <-errc:
+					slog.Info("Write loop terminating due to read error", "readError", readErr)
+				default:
+				}
 				return
 			} else {
-				slog.Info("message sent successfully")
+				slog.Info("HTML message sent successfully", "userID", sub.userID, "roomID", sub.roomID, "bytes", len(htmlBytes))
 			}
-		case <-ctx.Done(): // Connection closed by client or server (CloseRead)
-			slog.Info("WebSocket context done (write loop)", "userID", sub.userID, "roomID", sub.roomID, "error", ctx.Err())
-			readErr := <-errc
 
-			if readErr != nil && !errors.Is(readErr, context.Canceled) {
-				slog.Error("WebSocket closed due to read error", "userID", sub.userID, "roomID", sub.roomID, "error", readErr)
+		case <-ctx.Done(): // Connection closed by client or server
+			slog.Info("WebSocket context done (write loop)", "userID", sub.userID, "roomID", sub.roomID, "error", ctx.Err())
+			select {
+			case readErr := <-errc:
+				if readErr != nil && !errors.Is(readErr, context.Canceled) && !errors.Is(readErr, net.ErrClosed) && websocket.CloseStatus(readErr) < 0 {
+					slog.Error("WebSocket closed due to read error", "userID", sub.userID, "roomID", sub.roomID, "error", readErr)
+				} else {
+					slog.Info("Read loop closed gracefully or context canceled", "userID", sub.userID, "roomID", sub.roomID, "error", readErr)
+				}
+			default:
+				slog.Info("Write loop context done without prior read error signal", "userID", sub.userID, "roomID", sub.roomID)
 			}
 			return
+
 		}
 	}
 }

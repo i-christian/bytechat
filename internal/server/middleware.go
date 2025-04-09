@@ -20,14 +20,6 @@ const (
 	userContextKey contextKey = "user"
 )
 
-// User represents the authenticated user along with their role.
-type User struct {
-	Role      string
-	FirstName string
-	LastName  string
-	UserID    uuid.UUID
-}
-
 // refreshSession method updates a near session in the database if its near expiry
 func (s *Server) refreshSession(ctx context.Context, session database.GetSessionRow) (uuid.UUID, error) {
 	newExpiry := pgtype.Timestamptz{Time: time.Now().Add(2 * 7 * 24 * time.Hour), Valid: true}

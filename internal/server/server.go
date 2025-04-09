@@ -25,9 +25,23 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// User represents the authenticated user along with their role.
+type User struct {
+	Role      string
+	FirstName string
+	LastName  string
+	UserID    uuid.UUID
+}
+
+// Define the broadcast payload struct (if not already defined above)
+type broadcastPayload struct {
+	dbMessage database.Message
+	sender    User
+}
+
 // subscriber represents a WebSocket client connected to a specific room.
 type subscriber struct {
-	msgs      chan []byte
+	msgs      chan broadcastPayload
 	closeSlow func()
 	userID    uuid.UUID
 	roomID    uuid.UUID
