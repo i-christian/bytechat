@@ -100,7 +100,7 @@ func (s *Server) deleteSubscriber(roomID uuid.UUID, sub *subscriber) {
 	}
 }
 
-// publish broadcasts a message (now HTML bytes) to all subscribers in a specific room.
+// publish broadcasts a message HTML bytes to all subscribers in a specific room.
 func (s *Server) publish(roomID uuid.UUID, payload broadcastPayload) {
 	s.subscribersMu.Lock()
 	subsCopy := make([]*subscriber, 0)
@@ -136,7 +136,9 @@ func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn,
 	return c.Write(ctx, websocket.MessageText, msg)
 }
 
-// handleWebSocket upgrades the connection to WebSocket and manages the lifecycle.
+// handleWebSocket is the HTTP handler responsible for upgrading a connection
+// to the WebSocket protocol and managing the full lifecycle of that connection for chat.
+// It requires the user to be authenticated and expects a room ID in the URL path.
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	roomIDStr := r.PathValue("room_id")
 	roomID, err := uuid.Parse(roomIDStr)
@@ -161,7 +163,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// defer c.CloseNow()
+	defer c.CloseNow()
 	slog.Info("WebSocket connection established", "userID", user.UserID, "roomID", roomID)
 
 	var mu sync.Mutex
