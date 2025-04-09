@@ -256,8 +256,17 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// Send the rendered HTML fragment over the WebSocket
-			htmlBytes := buf.Bytes()
+			singleMessageHTML := buf.String()
+
+			// fixing the HTMX web socket swapping problem
+			// We have to wrap the response with an id which we are targeting. And also add hx-swap-oob=beforeend attribute
+			oobWrapperHTML := fmt.Sprintf(
+				`<div id="chat-messages" hx-swap-oob="beforeend">%s</div>`,
+				singleMessageHTML,
+			)
+
+			htmlBytes := []byte(oobWrapperHTML)
+
 			err = writeTimeout(ctx, time.Second*5, c, htmlBytes)
 			if err != nil {
 				slog.Error("WebSocket write error", "userID", sub.userID, "roomID", sub.roomID, "error", err)
