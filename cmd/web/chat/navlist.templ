@@ -15,7 +15,7 @@ templ NavList(role string, rooms []database.ListPublicRoomsRow) {
 			}
 			if role != "admin" {
 				<li>
-					<a href="/dm" hx-get="/dm" hx-target="#content-area" hx-swap="innerHTML" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Messages">
+					<a href="/chat/dm" hx-get="/dm" hx-target="#content-area" hx-swap="innerHTML" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Messages">
 						<i class="nav-icon fas fa-message fa-lg mr-3 text-blue-600"></i>
 						<span class="nav-text text-sm">Messages</span>
 					</a>

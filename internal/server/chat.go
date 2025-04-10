@@ -46,13 +46,27 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	joinParams := database.JoinRoomParams{
+		UserID: user.UserID,
+		RoomID: roomID,
+	}
+	// Join Room first
+	err = s.queries.JoinRoom(r.Context(), joinParams)
+	if err != nil {
+		slog.Error("Failed to join room", "user id", user.UserID, "room id", roomID, err.Error())
+	}
+
 	roomDetails, err := s.queries.GetRoomDetails(r.Context(), roomID)
 	roomName := "Chat Room"
 	if err == nil {
 		roomName = roomDetails
 	} else {
 		slog.Warn("Could not fetch room details", "roomID", roomID, "error", err)
-		return
+	}
+
+	roomMembers, err := s.queries.GetUsersInRoom(r.Context(), roomID)
+	if err != nil {
+		slog.Error("Could not fetch room details", "roomID", roomID, "error", err.Error())
 	}
 
 	initialMessages, err := s.queries.ListMessagesByRoom(r.Context(), database.ListMessagesByRoomParams{
@@ -71,7 +85,7 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		CurrentUserID:   user.UserID,
 	}
 
-	s.renderComponent(w, r, chat.ChatPage(pageData))
+	s.renderComponent(w, r, chat.ChatPage(pageData, roomMembers))
 }
 
 // addSubscriber registers a subscriber for a given room.
@@ -89,7 +103,6 @@ func (s *Server) addSubscriber(ctx context.Context, roomID uuid.UUID, sub *subsc
 	}
 	s.subscribersByRoom[roomID][sub] = struct{}{}
 	slog.Info("Subscriber added", "userID", sub.userID, "roomID", roomID)
-	fmt.Printf("subs map: %v", s.subscribersByRoom)
 }
 
 // deleteSubscriber removes a subscriber from a given room.

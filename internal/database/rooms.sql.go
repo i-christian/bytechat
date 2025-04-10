@@ -79,17 +79,24 @@ func (q *Queries) GetRoomDetails(ctx context.Context, roomID uuid.UUID) (string,
 
 const getUsersInRoom = `-- name: GetUsersInRoom :many
 select 
-    users.last_name || ' ' || users.first_name as full_name,
-    users.status
+    users.first_name || ' ' || users.last_name as full_name,
+    users.status,
+    users.user_id,
+    users.updated_at,
+    rooms.name
 from users
 join chat_rooms using(user_id)
 join rooms using (room_id)
 where rooms.room_id = $1
+order by users.updated_at desc
 `
 
 type GetUsersInRoomRow struct {
-	FullName interface{} `json:"full_name"`
-	Status   string      `json:"status"`
+	FullName  interface{}        `json:"full_name"`
+	Status    string             `json:"status"`
+	UserID    uuid.UUID          `json:"user_id"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	Name      string             `json:"name"`
 }
 
 func (q *Queries) GetUsersInRoom(ctx context.Context, roomID uuid.UUID) ([]GetUsersInRoomRow, error) {
@@ -101,7 +108,13 @@ func (q *Queries) GetUsersInRoom(ctx context.Context, roomID uuid.UUID) ([]GetUs
 	items := []GetUsersInRoomRow{}
 	for rows.Next() {
 		var i GetUsersInRoomRow
-		if err := rows.Scan(&i.FullName, &i.Status); err != nil {
+		if err := rows.Scan(
+			&i.FullName,
+			&i.Status,
+			&i.UserID,
+			&i.UpdatedAt,
+			&i.Name,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -134,6 +147,7 @@ func (q *Queries) InitiatePrivateRoom(ctx context.Context, arg InitiatePrivateRo
 const joinRoom = `-- name: JoinRoom :exec
 insert into chat_rooms(user_id, room_id) 
 values ($1, $2)
+on conflict (user_id, room_id) do nothing
 `
 
 type JoinRoomParams struct {
