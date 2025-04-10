@@ -75,7 +75,12 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // addSubscriber registers a subscriber for a given room.
-func (s *Server) addSubscriber(roomID uuid.UUID, sub *subscriber) {
+func (s *Server) addSubscriber(ctx context.Context, roomID uuid.UUID, sub *subscriber) {
+	err := s.queries.UserOnlineStatus(ctx, sub.userID)
+	if err != nil {
+		slog.Warn("User Status Update failed", "warning", err.Error())
+	}
+
 	s.subscribersMu.Lock()
 	defer s.subscribersMu.Unlock()
 
@@ -84,10 +89,16 @@ func (s *Server) addSubscriber(roomID uuid.UUID, sub *subscriber) {
 	}
 	s.subscribersByRoom[roomID][sub] = struct{}{}
 	slog.Info("Subscriber added", "userID", sub.userID, "roomID", roomID)
+	fmt.Printf("subs map: %v", s.subscribersByRoom)
 }
 
 // deleteSubscriber removes a subscriber from a given room.
-func (s *Server) deleteSubscriber(roomID uuid.UUID, sub *subscriber) {
+func (s *Server) deleteSubscriber(ctx context.Context, roomID uuid.UUID, sub *subscriber) {
+	err := s.queries.UserOfflineStatus(ctx, sub.userID)
+	if err != nil {
+		slog.Warn("User Status Update failed", "warning", err.Error())
+	}
+
 	s.subscribersMu.Lock()
 	defer s.subscribersMu.Unlock()
 
@@ -179,11 +190,13 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 		},
 	}
-	s.addSubscriber(roomID, sub)
-	defer s.deleteSubscriber(roomID, sub)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	s.addSubscriber(ctx, roomID, sub)
+	defer s.deleteSubscriber(ctx, roomID, sub)
+
 	errc := make(chan error, 1)
 
 	go func() {
@@ -196,13 +209,18 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 			err = wsjson.Read(ctx, c, &incomingMsg)
 			if err != nil {
+				dberr := s.queries.UserOfflineStatus(ctx, user.UserID)
+				if dberr != nil {
+					slog.Warn("User Status Update failed", "warning", dberr.Error())
+				}
+
 				if websocket.CloseStatus(err) == websocket.StatusNormalClosure ||
 					websocket.CloseStatus(err) == websocket.StatusGoingAway ||
 					errors.Is(err, context.Canceled) ||
 					errors.Is(err, net.ErrClosed) {
-					slog.Info("WebSocket reader closed gracefully", "userID", user.UserID, "roomID", roomID, "error", err)
+					slog.Info("WebSocket reader closed gracefully", "userID", user.UserID, "roomID", roomID)
 				} else {
-					slog.Error("WebSocket read error", "userID", user.UserID, "roomID", roomID, "error", err)
+					slog.Error("WebSocket read error", "userID", user.UserID, "roomID", roomID, "error", err.Error())
 				}
 				return
 			}

@@ -131,21 +131,21 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const getUserDetails = `-- name: GetUserDetails :one
-SELECT 
+select
     users.user_id,
     users.last_name, 
     users.first_name, 
     users.gender, 
     users.email, 
     users.password, 
-    roles.name AS role
-FROM 
+    roles.name as role
+from 
     users
-INNER JOIN 
+inner join 
     roles 
-ON 
+on 
     users.role_id = roles.role_id
-WHERE 
+where 
     users.user_id = $1
 `
 
@@ -224,4 +224,26 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const userOfflineStatus = `-- name: UserOfflineStatus :exec
+update users
+    set status = coalesce('offline', status)
+where user_id = $1
+`
+
+func (q *Queries) UserOfflineStatus(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, userOfflineStatus, userID)
+	return err
+}
+
+const userOnlineStatus = `-- name: UserOnlineStatus :exec
+update users
+    set status = coalesce('online', status)
+where user_id = $1
+`
+
+func (q *Queries) UserOnlineStatus(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, userOnlineStatus, userID)
+	return err
 }

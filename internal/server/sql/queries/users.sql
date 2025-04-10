@@ -11,22 +11,32 @@ values (
 on conflict (email) do nothing
 returning *;
 
+-- name: UserOnlineStatus :exec
+update users
+    set status = coalesce('online', status)
+where user_id = $1;
+
+-- name: UserOfflineStatus :exec
+update users
+    set status = coalesce('offline', status)
+where user_id = $1;
+
 -- name: GetUserDetails :one
-SELECT 
+select
     users.user_id,
     users.last_name, 
     users.first_name, 
     users.gender, 
     users.email, 
     users.password, 
-    roles.name AS role
-FROM 
+    roles.name as role
+from 
     users
-INNER JOIN 
+inner join 
     roles 
-ON 
+on 
     users.role_id = roles.role_id
-WHERE 
+where 
     users.user_id = $1;
 
 -- name: GetUserByEmail :one
