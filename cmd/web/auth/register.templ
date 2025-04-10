@@ -92,23 +92,18 @@ templ CreateUserForm() {
 					</div>
 				</label>
 			</div>
-			<div class="flex justify-end mt-8 space-x-4">
-				<button
-					type="button"
-					hx-get="/login"
-					hx-push-url="true"
-					hx-target="#auth-section"
-					hx-swap="innerHTML"
-					class="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-gray-400 hover:pointer-cursor"
-				>
-					Cancel
-				</button>
-				<button
-					type="submit"
-					class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:cursor-pointer"
-				>
-					Create
-				</button>
+			<button
+				type="submit"
+				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:cursor-pointer"
+			>
+				Register
+			</button>
+			<div class="mx-auto p-1 my-1">
+				<p class="text-xs">Already has an account ?</p>
+				<a
+					class="hover:cursor-pointer text-center font-semibold p-1"
+					href="/login"
+				>Log In</a>
 			</div>
 		</fieldset>
 	</form>
