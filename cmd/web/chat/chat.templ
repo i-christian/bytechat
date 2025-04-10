@@ -50,7 +50,11 @@ templ ChatMessage(data ChatMessageData) {
 			<div class="text-xs font-semibold text-gray-600 sender-name">{ data.Sender.FirstName } { data.Sender.LastName }</div>
 		}
 		<p class="text-sm text-gray-800">{ data.Text }</p>
-		<div class="text-xs text-gray-500 text-right">{ data.Timestamp.Format("15:04") }</div>
+		if data.Timestamp.Format(time.DateOnly) >= time.Now().Format(time.DateOnly) {
+			<div class="text-xs text-gray-500 text-right">{ data.Timestamp.Format(time.TimeOnly) }</div>
+		} else {
+			<div class="text-xs text-gray-500 text-right">{ data.Timestamp.Format(time.DateTime) }</div>
+		}
 	</div>
 }
 
