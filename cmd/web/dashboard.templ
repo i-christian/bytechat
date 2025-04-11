@@ -20,11 +20,11 @@ templ Dashboard(user DashboardUserRole, rooms []database.ListPublicRoomsRow) {
 			<script src="/assets/js/htmx-ext-ws.js"></script>
 		</head>
 		<body
-			class="bg-gray-100 text-gray-800 font-sans h-screen"
+			class="bg-gray-100 text-gray-800 font-sans max-h-screen"
 		>
 			<header
 				id="header"
-				class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white shadow p-4 transition-all duration-300"
+				class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-teal-900 text-white shadow p-4 transition-all duration-300"
 			>
 				<button id="toggle-sidebar" class="text-2xl hover:cursor-pointer">
 					<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,12 +34,12 @@ templ Dashboard(user DashboardUserRole, rooms []database.ListPublicRoomsRow) {
 				<h1 class="text-xl ml-2 font-bold">{ ProjectName() }</h1>
 				@chat.UserProfile()
 			</header>
-			<aside id="sidebar" class="fixed z-40 h-full bg-white shadow transition-all duration-300 overflow-hidden" data-expanded="true">
+			<aside id="sidebar" class="fixed z-40 h-full bg-teal-600 shadow transition-all duration-300 overflow-y-auto overscroll-none" data-expanded="true">
 				<div class="pt-5 h-full flex flex-col">
 					@chat.NavList(user.Role, rooms)
 				</div>
 			</aside>
-			<main class="pt-[4rem] transition-all mx-5 my-6 duration-300">
+			<main class="pt-[4rem] transition-all mx-5 my-5 duration-300">
 				<div id="content-area">
 					{ children... }
 				</div>

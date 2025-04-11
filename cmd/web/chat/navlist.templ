@@ -3,20 +3,20 @@ package chat
 import "bytechat/internal/database"
 
 templ NavList(role string, rooms []database.ListPublicRoomsRow) {
-	<nav class="flex-1 overflow-y-auto">
+	<nav class="text-white flex-1 items-center overflow-y-auto overscroll-none">
 		<ul class="space-y-2">
 			if role == "admin" {
 				<li>
-					<a href="/admin" hx-get="/admin" hx-target="#content-area" hx-swap="innerHTML" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Users">
-						<i class="nav-icon fas fa-users fa-lg mr-3 text-blue-600"></i>
+					<a href="/admin" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-200 transition" title="Users">
+						<i class="nav-icon fas fa-users fa-lg mr-3 text-white"></i>
 						<span class="nav-text text-sm">Users</span>
 					</a>
 				</li>
 			}
 			if role != "admin" {
 				<li>
-					<a href="/chat/dm" hx-get="/dm" hx-target="#content-area" hx-swap="innerHTML" class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition" title="Messages">
-						<i class="nav-icon fas fa-message fa-lg mr-3 text-blue-600"></i>
+					<a href="/chat/dm" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-200 transition" title="Messages">
+						<i class="nav-icon fas fa-message fa-lg mr-3 text-white"></i>
 						<span class="nav-text text-sm">Messages</span>
 					</a>
 				</li>
@@ -24,13 +24,10 @@ templ NavList(role string, rooms []database.ListPublicRoomsRow) {
 					<li>
 						<a
 							href={ templ.SafeURL("/chat/" + room.RoomID.String()) }
-							hx-get={ "/chat/" + room.RoomID.String() }
-							hx-target="#content-area"
-							hx-swap="innerHTML"
-							class="flex items-center px-4 py-3 rounded-md hover:bg-blue-200 transition hover:cursor-pointer"
+							class="flex items-center px-4 py-2 rounded-md hover:bg-blue-200 transition hover:cursor-pointer"
 							title={ room.Name }
 						>
-							<i class="nav-icon fas fa-users fa-lg mr-3 text-blue-600"></i>
+							<i class="nav-icon fas fa-users fa-lg mr-3 text-white"></i>
 							<span class="nav-text text-sm">{ room.Name }</span>
 						</a>
 					</li>
