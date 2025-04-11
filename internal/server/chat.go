@@ -25,8 +25,32 @@ func (s *Server) showDashboardHome(w http.ResponseWriter, r *http.Request) {
 	s.renderComponent(w, r, chat.HomePlaceholder())
 }
 
-// showChatRooms renders a list of available public chatrooms
-func (s *Server) showChatRooms(w http.ResponseWriter, r *http.Request) {
+// roomMembers displays the latest members in a given chat room
+func (s *Server) roomMembers(w http.ResponseWriter, r *http.Request) {
+	roomID, err := uuid.Parse(r.PathValue("room_id"))
+	if err != nil {
+		slog.Error("Invalid room ID format", "roomID", roomID, "error", err)
+		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	roomMembersParams := database.GetUsersInRoomParams{
+		RoomID: roomID,
+		Limit:  20,
+	}
+	roomMembers, err := s.queries.GetUsersInRoom(r.Context(), roomMembersParams)
+	if err != nil {
+		slog.Error("Could not fetch room details", "roomID", roomID, "error", err.Error())
+	}
+
+	user, ok := r.Context().Value(userContextKey).(User)
+	if !ok || user.UserID == uuid.Nil {
+		slog.Warn("Chat page access attempt without authentication")
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	s.renderComponent(w, r, chat.RoomMembers(user.UserID, roomMembers))
 }
 
 // showSpecificChatPage renders the chat page for a given room ID.
@@ -35,7 +59,7 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
 		slog.Error("Invalid room ID format", "roomID", roomIDStr, "error", err)
-		http.Error(w, "Invalid Room ID", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
 
@@ -64,15 +88,6 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		slog.Warn("Could not fetch room details", "roomID", roomID, "error", err)
 	}
 
-	roomMembersParams := database.GetUsersInRoomParams{
-		RoomID: roomID,
-		Limit:  20,
-	}
-	roomMembers, err := s.queries.GetUsersInRoom(r.Context(), roomMembersParams)
-	if err != nil {
-		slog.Error("Could not fetch room details", "roomID", roomID, "error", err.Error())
-	}
-
 	initialMessages, err := s.queries.ListMessagesByRoom(r.Context(), database.ListMessagesByRoomParams{
 		RoomID: roomID,
 		Limit:  50,
@@ -89,7 +104,7 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		CurrentUserID:   user.UserID,
 	}
 
-	s.renderComponent(w, r, chat.ChatPage(pageData, roomMembers))
+	s.renderComponent(w, r, chat.ChatPage(pageData))
 }
 
 // addSubscriber registers a subscriber for a given room.

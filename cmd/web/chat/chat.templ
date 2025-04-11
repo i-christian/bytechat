@@ -28,6 +28,7 @@ type SenderInfo struct {
 type ChatPageData struct {
 	RoomID          uuid.UUID
 	RoomName        string
+	RoomType        string
 	InitialMessages []database.ListMessagesByRoomRow
 	CurrentUserID   uuid.UUID
 }
@@ -72,7 +73,7 @@ templ ChatMessage(data ChatMessageData) {
 }
 
 // templ ChatPage renders the main chat page.
-templ ChatPage(data ChatPageData, members []database.GetUsersInRoomRow) {
+templ ChatPage(data ChatPageData) {
 	<main class="md:flex md:flex-row md:gap-3 md:flex-nowrap">
 		<section
 			class="grow flex flex-col h-[calc(100vh-6rem)] "
@@ -211,40 +212,51 @@ templ ChatPage(data ChatPageData, members []database.GetUsersInRoomRow) {
                  chatForm.addEventListener('htmx:wsError', function(evt) {
                     console.error("WebSocket send error:", evt.detail.error);
                  });
-            }
-         })();
-      </script>
+            	}
+        	 })();
+    	  </script>
 		</section>
-		<ul class="bg-teal-900 text-white hidden md:block shadow p-2 rounded-md overflow-y-auto overscroll-none">
-			<header class="capitalize font-bold text-center">
-				<p>Members</p>
-			</header>
-			<hr/>
-			for _, member := range members {
-				<li
-					class="flex gap-2 items-center p-1"
-					id="#search-results"
-				>
-					if member.UserID != data.CurrentUserID {
-						<a
-							class="font-semibold hover:cursor-pointer hover:underline"
-							href={ templ.SafeURL("/chat/dm/" + member.UserID.String()) }
-						>
-							{ member.FullName.(string) }
-						</a>
-						if member.Status == "online" {
-							<span class="text-xs italic">online</span>
-						} else {
-							<p class="text-xs italic">Last Seen: { member.UpdatedAt.Time.Format(time.DateTime) }</p>
-						}
-					}
-				</li>
-			}
-		</ul>
+		<section
+			id="room-members"
+			hx-get={ "/chat/" + data.RoomID.String() + "/members" }
+			hx-trigger="load"
+			hx-swap="outerHTML"
+		>
+			Loading...
+		</section>
 	</main>
 }
 
-// templ HomePlaceholder renders a placeholder for the home screen.
+// RoomMembers renders latest room members
+templ RoomMembers(currentUserID uuid.UUID, members []database.GetUsersInRoomRow) {
+	<ul class="bg-teal-900 text-white hidden md:block shadow p-2 rounded-md overflow-y-auto overscroll-none">
+		<header class="capitalize font-bold text-center">
+			<p>Members</p>
+		</header>
+		<hr/>
+		for _, member := range members {
+			<li
+				class="flex gap-2 items-center p-1"
+			>
+				if member.UserID != currentUserID {
+					<a
+						class="font-semibold hover:cursor-pointer hover:underline"
+						href={ templ.SafeURL("/chat/dm/" + member.UserID.String()) }
+					>
+						{ member.FullName.(string) }
+					</a>
+					if member.Status == "online" {
+						<span class="text-xs italic">online</span>
+					} else {
+						<p class="text-xs italic">Last Seen: { member.UpdatedAt.Time.Format(time.DateTime) }</p>
+					}
+				}
+			</li>
+		}
+	</ul>
+}
+
+// HomePlaceholder renders a placeholder for the home screen.
 templ HomePlaceholder() {
 	<div class="p-6">
 		<h1 class="text-2xl font-semibold mb-4">Welcome!</h1>
