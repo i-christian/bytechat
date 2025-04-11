@@ -41,7 +41,15 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 }
 
 const listMessagesByRoom = `-- name: ListMessagesByRoom :many
-select m.message_id, m.room_id, m.user_id, m.text, m.created_at, u.first_name, u.last_name, u.status
+select 
+    m.message_id,
+    m.room_id,
+    m.user_id,
+    m.text,
+    m.created_at,
+    u.first_name,
+    u.last_name,
+    u.status
 from messages m
 join users u on m.user_id = u.user_id
 where m.room_id = $1

@@ -63,6 +63,8 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	roomName := r.URL.Query().Get("room_name")
+
 	user, ok := r.Context().Value(userContextKey).(User)
 	if !ok || user.UserID == uuid.Nil {
 		slog.Warn("Chat page access attempt without authentication")
@@ -74,16 +76,16 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		UserID: user.UserID,
 		RoomID: roomID,
 	}
-	// Join Room first
+
 	err = s.queries.JoinRoom(r.Context(), joinParams)
 	if err != nil {
 		slog.Error("Failed to join room", "user id", user.UserID, "room id", roomID, "error", err.Error())
 	}
 
 	roomDetails, err := s.queries.GetRoomDetails(r.Context(), roomID)
-	roomName := "Chat Room"
-	if err == nil {
-		roomName = roomDetails
+
+	if err == nil && roomDetails.RoomType == "public" {
+		roomName = roomDetails.Name
 	} else {
 		slog.Warn("Could not fetch room details", "roomID", roomID, "error", err)
 	}
@@ -100,6 +102,7 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 	pageData := chat.ChatPageData{
 		RoomID:          roomID,
 		RoomName:        roomName,
+		RoomType:        roomDetails.RoomType,
 		InitialMessages: initialMessages,
 		CurrentUserID:   user.UserID,
 	}
@@ -268,8 +271,6 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				default:
 				}
 				return
-			} else {
-				slog.Info("HTML message sent successfully", "userID", sub.userID, "roomID", sub.roomID, "bytes", len(htmlBytes))
 			}
 
 		case <-ctx.Done(): // Connection closed by client or server

@@ -48,6 +48,7 @@ where rooms.room_id = (
         and rooms.room_type = 'private'
     order by rooms.room_id
 )
+order by users.updated_at desc
 `
 
 type GetPrivateRoomsRow struct {
@@ -85,16 +86,20 @@ func (q *Queries) GetPrivateRooms(ctx context.Context, userID uuid.UUID) ([]GetP
 }
 
 const getRoomDetails = `-- name: GetRoomDetails :one
-select name from rooms
+select name, room_type from rooms
 where room_id = $1
-and room_type = 'public'
 `
 
-func (q *Queries) GetRoomDetails(ctx context.Context, roomID uuid.UUID) (string, error) {
+type GetRoomDetailsRow struct {
+	Name     string `json:"name"`
+	RoomType string `json:"room_type"`
+}
+
+func (q *Queries) GetRoomDetails(ctx context.Context, roomID uuid.UUID) (GetRoomDetailsRow, error) {
 	row := q.db.QueryRow(ctx, getRoomDetails, roomID)
-	var name string
-	err := row.Scan(&name)
-	return name, err
+	var i GetRoomDetailsRow
+	err := row.Scan(&i.Name, &i.RoomType)
+	return i, err
 }
 
 const getUsersInRoom = `-- name: GetUsersInRoom :many

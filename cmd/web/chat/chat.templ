@@ -84,7 +84,9 @@ templ ChatPage(data ChatPageData) {
 			hx-target="#chat-messages"
 		>
 			<header class="p-2 border-b border-gray-200">
-				<h2 class="text-lg font-semibold">{ data.RoomName }</h2>
+				<h2 class="text-lg font-semibold text-center mx-auto">
+					{ data.RoomName }
+				</h2>
 				<span id="currentUserInfo" data-user-id={ data.CurrentUserID.String() } class="hidden"></span>
 			</header>
 			<div id="chat-messages" class="flex-1 overflow-y-auto overscroll-none p-4 space-y-2 flex flex-col">
@@ -217,14 +219,16 @@ templ ChatPage(data ChatPageData) {
         	 })();
     	  </script>
 		</section>
-		<section
-			id="room-members"
-			hx-get={ "/chat/" + data.RoomID.String() + "/members" }
-			hx-trigger="load"
-			hx-swap="outerHTML"
-		>
-			Loading...
-		</section>
+		if data.RoomType == "public" {
+			<section
+				id="room-members"
+				hx-get={ "/chat/" + data.RoomID.String() + "/members" }
+				hx-trigger="load"
+				hx-swap="outerHTML"
+			>
+				Loading...
+			</section>
+		}
 	</main>
 }
 

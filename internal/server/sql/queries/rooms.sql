@@ -20,7 +20,8 @@ where rooms.room_id = (
     where users.user_id = $1
         and rooms.room_type = 'private'
     order by rooms.room_id
-);
+)
+order by users.updated_at desc;
 
 -- name: CreatePublicRoom :exec
 insert into rooms(name, description, room_type) 
@@ -30,9 +31,8 @@ values ($1, $2, $3);
 select room_id, name, description from rooms where room_type = 'public';
 
 -- name: GetRoomDetails :one
-select name from rooms
-where room_id = $1
-and room_type = 'public';
+select name, room_type from rooms
+where room_id = $1;
 
 -- name: JoinRoom :exec
 insert into chat_rooms(user_id, room_id) 

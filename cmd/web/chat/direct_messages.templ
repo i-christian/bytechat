@@ -2,14 +2,35 @@ package chat
 
 import "bytechat/internal/database"
 import "github.com/google/uuid"
+import "time"
 
 templ Messages(currentUser uuid.UUID, privateRooms []database.GetPrivateRoomsRow) {
 	<section>
-		<p>List of contacts with private messages</p>
-		for _, room := range privateRooms {
-			if room.UserID != currentUser {
-				<p>{ room.FullName.(string) }</p>
-			}
-		}
+		<header class="text-xl text-center mx-auto mb-2">My Messages</header>
+		<nav class="flex-1 items-center overflow-y-auto overscroll-none">
+			<ul class="space-y-2">
+				for _, room := range  privateRooms {
+					if room.UserID != currentUser {
+						<li>
+							<a
+								href={ templ.SafeURL("/chat/" + room.RoomID.String() + "?" + "room_name=" + room.FullName.(string)) }
+								class="flex items-center px-4 py-2 rounded-md hover:bg-blue-200 transition hover:cursor-pointer"
+								title={ room.FullName.(string) }
+							>
+								<i class="fas fa-user fa-lg mr-3 text-blue-900"></i>
+								<span class="font-semibold">
+									{ room.FullName.(string) }
+									if room.Status == "online" {
+										<span class="text-xs">online</span>
+									} else {
+										<p class="text-xs italic">Last Seen: { room.UpdatedAt.Time.Format(time.DateTime) }</p>
+									}
+								</span>
+							</a>
+						</li>
+					}
+				}
+			</ul>
+		</nav>
 	</section>
 }
