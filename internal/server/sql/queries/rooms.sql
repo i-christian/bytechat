@@ -2,14 +2,25 @@
 select from create_private_room($1, $2); 
 
 -- name: GetPrivateRooms :many
-select users.first_name || ' ' || users.last_name as my_name,
-    rooms.room_id
-from users 
-join chat_rooms on users.user_id = chat_rooms.user_id
-join rooms on chat_rooms.room_id = rooms.room_id
-where users.user_id = $1
-and rooms.room_type = 'private'
-order by rooms.room_id;
+select 
+    users.first_name || ' ' || users.last_name as full_name,
+    users.status,
+    users.user_id,
+    users.updated_at,
+    chat_rooms.room_id
+from users
+join chat_rooms using(user_id)
+join rooms using (room_id)
+where rooms.room_id = (
+    select 
+        rooms.room_id
+    from users 
+    join chat_rooms using(user_id)
+    join rooms using(room_id)
+    where users.user_id = $1
+        and rooms.room_type = 'private'
+    order by rooms.room_id
+);
 
 -- name: CreatePublicRoom :exec
 insert into rooms(name, description, room_type) 

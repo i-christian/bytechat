@@ -29,19 +29,33 @@ func (q *Queries) CreatePublicRoom(ctx context.Context, arg CreatePublicRoomPara
 }
 
 const getPrivateRooms = `-- name: GetPrivateRooms :many
-select users.first_name || ' ' || users.last_name as my_name,
-    rooms.room_id
-from users 
-join chat_rooms on users.user_id = chat_rooms.user_id
-join rooms on chat_rooms.room_id = rooms.room_id
-where users.user_id = $1
-and rooms.room_type = 'private'
-order by rooms.room_id
+select 
+    users.first_name || ' ' || users.last_name as full_name,
+    users.status,
+    users.user_id,
+    users.updated_at,
+    chat_rooms.room_id
+from users
+join chat_rooms using(user_id)
+join rooms using (room_id)
+where rooms.room_id = (
+    select 
+        rooms.room_id
+    from users 
+    join chat_rooms using(user_id)
+    join rooms using(room_id)
+    where users.user_id = $1
+        and rooms.room_type = 'private'
+    order by rooms.room_id
+)
 `
 
 type GetPrivateRoomsRow struct {
-	MyName interface{} `json:"my_name"`
-	RoomID uuid.UUID   `json:"room_id"`
+	FullName  interface{}        `json:"full_name"`
+	Status    string             `json:"status"`
+	UserID    uuid.UUID          `json:"user_id"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	RoomID    uuid.UUID          `json:"room_id"`
 }
 
 func (q *Queries) GetPrivateRooms(ctx context.Context, userID uuid.UUID) ([]GetPrivateRoomsRow, error) {
@@ -53,7 +67,13 @@ func (q *Queries) GetPrivateRooms(ctx context.Context, userID uuid.UUID) ([]GetP
 	items := []GetPrivateRoomsRow{}
 	for rows.Next() {
 		var i GetPrivateRoomsRow
-		if err := rows.Scan(&i.MyName, &i.RoomID); err != nil {
+		if err := rows.Scan(
+			&i.FullName,
+			&i.Status,
+			&i.UserID,
+			&i.UpdatedAt,
+			&i.RoomID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

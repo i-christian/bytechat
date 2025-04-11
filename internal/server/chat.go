@@ -107,74 +107,21 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 	s.renderComponent(w, r, chat.ChatPage(pageData))
 }
 
-// addSubscriber registers a subscriber for a given room.
-func (s *Server) addSubscriber(ctx context.Context, roomID uuid.UUID, sub *subscriber) {
-	err := s.queries.UserOnlineStatus(ctx, sub.userID)
-	if err != nil {
-		slog.Warn("User Status Update failed", "warning", err.Error())
-	}
-
-	s.subscribersMu.Lock()
-	defer s.subscribersMu.Unlock()
-
-	if _, ok := s.subscribersByRoom[roomID]; !ok {
-		s.subscribersByRoom[roomID] = make(map[*subscriber]struct{})
-	}
-	s.subscribersByRoom[roomID][sub] = struct{}{}
-	slog.Info("Subscriber added", "userID", sub.userID, "roomID", roomID)
-}
-
-// deleteSubscriber removes a subscriber from a given room.
-func (s *Server) deleteSubscriber(ctx context.Context, roomID uuid.UUID, sub *subscriber) {
-	err := s.queries.UserOfflineStatus(ctx, sub.userID)
-	if err != nil {
-		slog.Warn("User Status Update failed", "warning", err.Error())
-	}
-
-	s.subscribersMu.Lock()
-	defer s.subscribersMu.Unlock()
-
-	if subs, ok := s.subscribersByRoom[roomID]; ok {
-		delete(subs, sub)
-		if len(subs) == 0 {
-			delete(s.subscribersByRoom, roomID)
-		}
-		slog.Info("Subscriber deleted", "userID", sub.userID, "roomID", roomID)
-	}
-}
-
-// publish broadcasts a message HTML bytes to all subscribers in a specific room.
-func (s *Server) publish(roomID uuid.UUID, payload broadcastPayload) {
-	s.subscribersMu.Lock()
-	subsCopy := make([]*subscriber, 0)
-	if subs, ok := s.subscribersByRoom[roomID]; ok {
-		for sub := range subs {
-			subsCopy = append(subsCopy, sub)
-		}
-	}
-	s.subscribersMu.Unlock()
-
-	if len(subsCopy) == 0 {
-		slog.Warn("Attempted to publish data to room with no subscribers", "roomID", roomID)
+func (s *Server) showPrivateChats(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(userContextKey).(User)
+	if !ok || user.UserID == uuid.Nil {
+		slog.Warn("attempt to retrieve private chats")
+		writeError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 		return
 	}
 
-	for _, sub := range subsCopy {
-		select {
-		case sub.msgs <- payload:
-			// Payload sent successfully
-		default:
-			// Subscriber's buffer is full
-			go sub.closeSlow()
-		}
+	privateRooms, err := s.queries.GetPrivateRooms(r.Context(), user.UserID)
+	if err != nil {
+		slog.Error("Failed to get private rooms", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
-}
 
-// Helper function for writing messages with timeout
-func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn, msg []byte) error {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	return c.Write(ctx, websocket.MessageText, msg)
+	s.renderComponent(w, r, chat.Messages(user.UserID, privateRooms))
 }
 
 // handleWebSocket is the HTTP handler responsible for upgrading a connection

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"bytechat/internal/database"
+	"strconv"
 )
 
 // ChatMessageData holds data for rendering a single chat message.
@@ -231,7 +232,7 @@ templ ChatPage(data ChatPageData) {
 templ RoomMembers(currentUserID uuid.UUID, members []database.GetUsersInRoomRow) {
 	<ul class="bg-teal-900 text-white hidden md:block shadow p-2 rounded-md overflow-y-auto overscroll-none">
 		<header class="capitalize font-bold text-center">
-			<p>Members</p>
+			<p>Members ({ strconv.Itoa(len(members)) })</p>
 		</header>
 		<hr/>
 		for _, member := range members {
@@ -250,16 +251,10 @@ templ RoomMembers(currentUserID uuid.UUID, members []database.GetUsersInRoomRow)
 					} else {
 						<p class="text-xs italic">Last Seen: { member.UpdatedAt.Time.Format(time.DateTime) }</p>
 					}
+				} else {
+					<p class="font-semibold">{ member.FullName.(string) } </p>
 				}
 			</li>
 		}
 	</ul>
-}
-
-// HomePlaceholder renders a placeholder for the home screen.
-templ HomePlaceholder() {
-	<div class="p-6">
-		<h1 class="text-2xl font-semibold mb-4">Welcome!</h1>
-		<p class="text-gray-600">Select a chat room from the sidebar to start messaging.</p>
-	</div>
 }

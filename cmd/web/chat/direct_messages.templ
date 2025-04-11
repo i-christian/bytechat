@@ -1,0 +1,15 @@
+package chat
+
+import "bytechat/internal/database"
+import "github.com/google/uuid"
+
+templ Messages(currentUser uuid.UUID, privateRooms []database.GetPrivateRoomsRow) {
+	<section>
+		<p>List of contacts with private messages</p>
+		for _, room := range privateRooms {
+			if room.UserID != currentUser {
+				<p>{ room.FullName.(string) }</p>
+			}
+		}
+	</section>
+}
