@@ -89,7 +89,13 @@ join chat_rooms using(user_id)
 join rooms using (room_id)
 where rooms.room_id = $1
 order by users.updated_at desc
+limit $2
 `
+
+type GetUsersInRoomParams struct {
+	RoomID uuid.UUID `json:"room_id"`
+	Limit  int32     `json:"limit"`
+}
 
 type GetUsersInRoomRow struct {
 	FullName  interface{}        `json:"full_name"`
@@ -99,8 +105,8 @@ type GetUsersInRoomRow struct {
 	Name      string             `json:"name"`
 }
 
-func (q *Queries) GetUsersInRoom(ctx context.Context, roomID uuid.UUID) ([]GetUsersInRoomRow, error) {
-	rows, err := q.db.Query(ctx, getUsersInRoom, roomID)
+func (q *Queries) GetUsersInRoom(ctx context.Context, arg GetUsersInRoomParams) ([]GetUsersInRoomRow, error) {
+	rows, err := q.db.Query(ctx, getUsersInRoom, arg.RoomID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

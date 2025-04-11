@@ -44,4 +44,5 @@ from users
 join chat_rooms using(user_id)
 join rooms using (room_id)
 where rooms.room_id = $1
-order by users.updated_at desc;
+order by users.updated_at desc
+limit $2;

@@ -53,7 +53,7 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 	// Join Room first
 	err = s.queries.JoinRoom(r.Context(), joinParams)
 	if err != nil {
-		slog.Error("Failed to join room", "user id", user.UserID, "room id", roomID, err.Error())
+		slog.Error("Failed to join room", "user id", user.UserID, "room id", roomID, "error", err.Error())
 	}
 
 	roomDetails, err := s.queries.GetRoomDetails(r.Context(), roomID)
@@ -64,7 +64,11 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 		slog.Warn("Could not fetch room details", "roomID", roomID, "error", err)
 	}
 
-	roomMembers, err := s.queries.GetUsersInRoom(r.Context(), roomID)
+	roomMembersParams := database.GetUsersInRoomParams{
+		RoomID: roomID,
+		Limit:  20,
+	}
+	roomMembers, err := s.queries.GetUsersInRoom(r.Context(), roomMembersParams)
 	if err != nil {
 		slog.Error("Could not fetch room details", "roomID", roomID, "error", err.Error())
 	}
