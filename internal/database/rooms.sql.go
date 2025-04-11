@@ -157,7 +157,7 @@ func (q *Queries) GetUsersInRoom(ctx context.Context, arg GetUsersInRoomParams) 
 }
 
 const initiatePrivateRoom = `-- name: InitiatePrivateRoom :one
-select from create_private_room($1, $2)
+select create_private_room from create_private_room($1, $2)
 `
 
 type InitiatePrivateRoomParams struct {
@@ -165,14 +165,11 @@ type InitiatePrivateRoomParams struct {
 	UserB uuid.UUID `json:"user_b"`
 }
 
-type InitiatePrivateRoomRow struct {
-}
-
-func (q *Queries) InitiatePrivateRoom(ctx context.Context, arg InitiatePrivateRoomParams) (InitiatePrivateRoomRow, error) {
+func (q *Queries) InitiatePrivateRoom(ctx context.Context, arg InitiatePrivateRoomParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, initiatePrivateRoom, arg.UserA, arg.UserB)
-	var i InitiatePrivateRoomRow
-	err := row.Scan()
-	return i, err
+	var create_private_room pgtype.UUID
+	err := row.Scan(&create_private_room)
+	return create_private_room, err
 }
 
 const joinRoom = `-- name: JoinRoom :exec

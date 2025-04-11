@@ -1,5 +1,5 @@
 -- name: InitiatePrivateRoom :one
-select from create_private_room($1, $2); 
+select * from create_private_room($1, $2); 
 
 -- name: GetPrivateRooms :many
 select 

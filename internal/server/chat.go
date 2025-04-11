@@ -25,11 +25,49 @@ func (s *Server) showDashboardHome(w http.ResponseWriter, r *http.Request) {
 	s.renderComponent(w, r, chat.HomePlaceholder())
 }
 
+// createPrivateRoom method creates a private room for two users.
+// It accepts {friend_id}
+func (s *Server) createPrivateRoom(w http.ResponseWriter, r *http.Request) {
+	friendID, err := uuid.Parse(r.PathValue("friend_id"))
+	if err != nil {
+		slog.Error("Invalid room ID format", "roomID", r.PathValue("friend_id"), "error", err)
+		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	roomName := r.URL.Query().Get("room_name")
+
+	user, ok := r.Context().Value(userContextKey).(User)
+	if !ok || user.UserID == uuid.Nil {
+		slog.Warn("Chat page access attempt without authentication")
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	params := database.InitiatePrivateRoomParams{
+		UserA: user.UserID,
+		UserB: friendID,
+	}
+
+	roomID, err := s.queries.InitiatePrivateRoom(r.Context(), params)
+	if err != nil {
+		slog.Error("Failed to Create Private Room", "UserA", user.UserID, "UserB", friendID)
+		return
+	}
+
+	if !roomID.Valid {
+		slog.Error("internal server error", "dbRoomID", roomID)
+		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/chat/%v?room_name=%s", roomID, roomName), http.StatusFound)
+}
+
 // roomMembers displays the latest members in a given chat room
 func (s *Server) roomMembers(w http.ResponseWriter, r *http.Request) {
 	roomID, err := uuid.Parse(r.PathValue("room_id"))
 	if err != nil {
-		slog.Error("Invalid room ID format", "roomID", roomID, "error", err)
+		slog.Error("Invalid room ID format", "roomID", r.PathValue("room_id"), "error", err)
 		writeError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
@@ -83,7 +121,6 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	roomDetails, err := s.queries.GetRoomDetails(r.Context(), roomID)
-
 	if err == nil && roomDetails.RoomType == "public" {
 		roomName = roomDetails.Name
 	} else {
