@@ -217,11 +217,26 @@ templ ChatPage(data ChatPageData, members []database.GetUsersInRoomRow) {
 		</section>
 		<ul class="bg-teal-900 text-white hidden md:block shadow p-2 rounded-md overflow-y-auto overscroll-none">
 			<header class="capitalize font-bold text-center">
-				Members
+				<p>Members</p>
+				<section class="p-1 mx-auto my-1">
+					<input
+						type="search"
+						id="site-members"
+						name="search"
+						class="rounded-md p-1 bg-white text-black"
+						hx-post="/chat/search"
+						hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+						hx-target="#search-results"
+						placeholder="Begin Typing Name to Search Members..."
+					/>
+				</section>
 			</header>
 			<hr/>
 			for _, member := range members {
-				<li class="flex gap-2 items-center p-1">
+				<li
+					class="flex gap-2 items-center p-1"
+					id="#search-results"
+				>
 					if member.UserID != data.CurrentUserID {
 						<a
 							class="font-semibold hover:cursor-pointer hover:underline"
