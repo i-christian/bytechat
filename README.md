@@ -12,7 +12,7 @@
 ## Description
 ByteChat is a real-time chat application demonstrating the use of WebSockets in a Go backend. The application features a server-side rendered frontend using `templ` and HTMX for dynamic updates.
 
-The primary motivation for this project was to explore and implement a clean WebSocket solution in Go for real-time communication, supporting both public chat rooms and potential private interactions.
+The primary motivation for this project was to explore and implement a clean WebSocket solution in Go for real-time communication, supporting both public chat rooms and private(peer to peer) interactions.
 
 ## Key Features ✨
 
