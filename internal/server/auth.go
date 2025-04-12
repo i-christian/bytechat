@@ -120,5 +120,6 @@ func (s *Server) LogoutConfirmHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) LogoutCancelHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/login", http.StatusFound)
+	redirectPath := r.Referer()
+	http.Redirect(w, r, redirectPath, http.StatusFound)
 }
