@@ -246,7 +246,7 @@ templ RoomMembers(currentUserID uuid.UUID, members []database.GetUsersInRoomRow)
 				if member.UserID != currentUserID {
 					<a
 						class="font-semibold hover:cursor-pointer hover:underline"
-						href={ templ.SafeURL("/chat/dm/" + member.UserID.String()) }
+						href={ templ.SafeURL("/chat/" + member.UserID.String() + "?" + "room_name=" + member.FullName.(string)) }
 					>
 						{ member.FullName.(string) }
 					</a>
