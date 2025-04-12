@@ -57,7 +57,7 @@ func (s *Server) createPrivateRoom(w http.ResponseWriter, r *http.Request) {
 
 	if !roomID.Valid {
 		slog.Error("internal server error", "dbRoomID", roomID)
-		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+		http.Redirect(w, r, r.Referer(), http.StatusFound)
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/chat/%v?room_name=%s", roomID, roomName), http.StatusFound)
