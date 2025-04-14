@@ -99,7 +99,7 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 		user := User{
 			UserID:    session.UserID,
 			Role:      session.Role,
-			LastName:  session.FirstName,
+			LastName:  session.LastName,
 			FirstName: session.FirstName,
 		}
 
