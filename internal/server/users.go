@@ -208,12 +208,12 @@ func (s *Server) EditUser(w http.ResponseWriter, r *http.Request) {
 	tx.Commit(r.Context())
 
 	if r.Header.Get("HX-Request") != "" {
-		w.Header().Set("HX-Redirect", "/dashboard/userlist")
+		w.Header().Set("HX-Redirect", "/admin")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	http.Redirect(w, r, "/dashboard/userlist", http.StatusFound)
+	http.Redirect(w, r, "/admin", http.StatusFound)
 }
 
 // ShowDeleteConfirmation renders the delete confirmation modal, passing the user id.
@@ -239,10 +239,10 @@ func (s *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Header.Get("HX-Request") != "" {
-		w.Header().Set("HX-Redirect", "/dashboard/userlist")
+		w.Header().Set("HX-Redirect", "/admin")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	http.Redirect(w, r, "/dashboard/userlist", http.StatusFound)
+	http.Redirect(w, r, "/admin", http.StatusFound)
 }

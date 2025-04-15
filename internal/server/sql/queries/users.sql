@@ -40,35 +40,35 @@ where
     users.user_id = $1;
 
 -- name: GetUserByEmail :one
-SELECT password, user_id FROM users 
-WHERE email = $1;
+select password, user_id from users 
+where email = $1;
 
 -- name: ListUsers :many
-SELECT
+select
     users.user_id,
     users.last_name,
     users.first_name,
     users.gender,
     users.email,
     users.password,
-    roles.name AS role
-FROM users
-INNER JOIN roles ON users.role_id = roles.role_id
-ORDER BY last_name;
+    roles.name as role
+from users
+join roles on users.role_id = roles.role_id
+order by roles.name, users.last_name, users.first_name;
 
 -- name: EditUser :exec
-UPDATE users
-    set first_name = COALESCE($2, first_name),
-    last_name = COALESCE($3, last_name),
-    gender = COALESCE($4, gender),
-    email = COALESCE($5, email)
-WHERE user_id = $1;
+update users
+    set first_name = coalesce($2, first_name),
+    last_name = coalesce($3, last_name),
+    gender = coalesce($4, gender),
+    email = coalesce($5, email)
+where user_id = $1;
 
 -- name: EditPassword :exec
-UPDATE users
-    set password = COALESCE($2, password)
-WHERE user_id = $1;
+update users
+    set password = coalesce($2, password)
+where user_id = $1;
 
 -- name: DeleteUser :exec
-DELETE FROM users
-WHERE user_id = $1;
+delete from users
+where user_id = $1;

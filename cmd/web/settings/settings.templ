@@ -1,0 +1,174 @@
+package settings
+
+import "bytechat/internal/database"
+
+templ UserSettings(user database.GetUserDetailsRow) {
+	<div id="popover-container"></div>
+	<div class="max-w-4xl mx-auto p-6">
+		<div class="bg-white overflow-hidden">
+			<div class="bg-blue-600 px-6 py-4 flex items-center justify-between">
+				<h2 class="text-white text-xl font-bold">User Details</h2>
+			</div>
+			<form
+				hx-put="/settings"
+				hx-target="#popover-container"
+				hx-swap="innerHTML"
+				class="px-6 py-6"
+			>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<section id="personal-details">
+						<h3 class="text-lg font-semibold text-gray-800 mb-3">Personal Details</h3>
+						<div>
+							<label class="block text-gray-700 font-semibold mb-2">
+								First Name
+							</label>
+							<input
+								type="text"
+								name="first_name"
+								value={ user.FirstName }
+								required
+								class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							/>
+						</div>
+						<div>
+							<label class="block text-gray-700 font-semibold mb-2 mt-4">
+								Last Name
+							</label>
+							<input
+								type="text"
+								name="last_name"
+								value={ user.LastName }
+								required
+								class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							/>
+						</div>
+						<div>
+							<label class="block text-gray-700 font-semibold mb-2 mt-4">
+								Email (optional)
+							</label>
+							<input
+								type="email"
+								name="email"
+								value={ user.Email }
+								class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							/>
+						</div>
+						<div>
+							<label class="block text-gray-700 font-semibold mb-2 mt-4">
+								Gender
+							</label>
+							<select
+								name="gender"
+								required
+								class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							>
+								<option value="">Select</option>
+								<option
+									value="M"
+									if user.Gender == "M" {
+										selected="M"
+									}
+								>Male</option>
+								<option
+									value="F"
+									if user.Gender == "F" {
+										selected="F"
+									}
+								>Female</option>
+							</select>
+						</div>
+					</section>
+					<section id="password-section" class="rounded p-5">
+						<h3 class="text-lg font-semibold text-gray-800 mb-3">Change Password <span class="font-normal text-gray-500">(Optional)</span></h3>
+						<p class="text-gray-600 mb-4">You can change your password here. If you don't want to change your password, leave these fields blank.</p>
+						<section>
+							<label class="block text-gray-700 font-semibold mb-2">
+								Current Password
+							</label>
+							<div class="relative">
+								<input
+									type="password"
+									name="current_password"
+									placeholder="Enter current password"
+									class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									id="current_password"
+								/>
+								<div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+									<i id="toggleCurrentPassword" class="fas fa-eye" onclick="togglePasswordVisibility('current_password', 'toggleCurrentPassword')"></i>
+								</div>
+							</div>
+						</section>
+						<section class="mt-4">
+							<label class="block text-gray-700 font-semibold mb-2">
+								New Password
+							</label>
+							<div class="relative">
+								<input
+									type="password"
+									name="new_password"
+									minlength="6"
+									placeholder="Enter new password"
+									class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									id="new_password"
+								/>
+								<div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+									<i id="toggleNewPassword" class="fas fa-eye" onclick="togglePasswordVisibility('new_password', 'toggleNewPassword')"></i>
+								</div>
+							</div>
+						</section>
+						<section class="mt-4">
+							<label class="block text-gray-700 font-semibold mb-2">
+								Confirm Password
+							</label>
+							<div class="relative">
+								<input
+									type="password"
+									name="confirm_password"
+									minlength="6"
+									placeholder="confirm new password"
+									class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									id="confirm_password"
+								/>
+								<div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+									<i id="toggleConfirmPassword" class="fas fa-eye" onclick="togglePasswordVisibility('confirm_password', 'toggleConfirmPassword')"></i>
+								</div>
+							</div>
+						</section>
+					</section>
+				</div>
+				<div class="flex justify-end mt-8 space-x-4">
+					<button
+						type="button"
+						hx-get="/"
+						hx-target="#content-area"
+						hx-swap="innerHTML"
+						class="bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-gray-400 hover:cursor-pointer"
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:cursor-pointer"
+					>
+						Save
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	<script>
+		function togglePasswordVisibility(inputId, iconId) {
+			const passwordInput = document.getElementById(inputId);
+			const toggleIcon = document.getElementById(iconId);
+			if (passwordInput.type === "password") {
+				passwordInput.type = "text";
+				toggleIcon.classList.remove("fa-eye");
+				toggleIcon.classList.add("fa-eye-slash");
+			} else {
+				passwordInput.type = "password";
+				toggleIcon.classList.remove("fa-eye-slash");
+				toggleIcon.classList.add("fa-eye");
+			}
+		}
+	</script>
+}
