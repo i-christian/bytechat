@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -59,6 +60,7 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 
 		session, err := s.queries.GetSession(r.Context(), parsedSessionID)
 		if err != nil {
+			slog.Error("internal server error", "error", err.Error())
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
@@ -76,15 +78,7 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			cookie := http.Cookie{
-				Name:     "sessionid",
-				Value:    newSessionID.String(),
-				Path:     "/",
-				MaxAge:   3600 * 24 * 7 * 2, // 2 weeks
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
-			}
+			cookie := createSessionCookie(newSessionID)
 
 			if err := cookies.WriteEncrypted(w, cookie, s.SecretKey); err != nil {
 				writeError(w, http.StatusInternalServerError, "internal server error")

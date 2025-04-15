@@ -3,7 +3,6 @@ package server
 import (
 	"log/slog"
 	"net/http"
-	"os"
 
 	"bytechat/internal/cookies"
 
@@ -55,27 +54,17 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Determine the 'Secure' flag based on the environment.
-	secureFlag := os.Getenv("ENV") == "production"
-	cookie := http.Cookie{
-		Name:     "sessionid",
-		Value:    sessionID.String(),
-		Path:     "/",
-		MaxAge:   3600 * 24 * 7 * 2, // 2 weeks
-		HttpOnly: true,
-		Secure:   secureFlag,
-		SameSite: http.SameSiteStrictMode,
-	}
+	cookie := createSessionCookie(sessionID)
 
 	if err := cookies.WriteEncrypted(w, cookie, s.SecretKey); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	currentSession, err := s.queries.GetRedirectPath(r.Context(), returnedSession)
+	currentUserRole, err := s.queries.GetRedirectPath(r.Context(), returnedSession)
 
 	var redirectPath string
-	if currentSession == "admin" {
+	if currentUserRole == "admin" {
 		redirectPath = "/admin"
 	} else {
 		redirectPath = "/"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"bytechat/cmd/web"
@@ -12,6 +13,23 @@ import (
 	"github.com/coder/websocket"
 	"github.com/google/uuid"
 )
+
+// createSessionCookie function is a helper function that creates a session cookie
+func createSessionCookie(sessionID uuid.UUID) http.Cookie {
+	// Determine the 'Secure' flag based on the environment.
+	secureFlag := os.Getenv("ENV") == "production"
+	cookie := http.Cookie{
+		Name:     "sessionid",
+		Value:    sessionID.String(),
+		Path:     "/",
+		MaxAge:   3600 * 24 * 7 * 2, // 2 weeks
+		HttpOnly: true,
+		Secure:   secureFlag,
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	return cookie
+}
 
 // renderDashboardComponent renders a component either as a full dashboard page
 // (when not an HTMX request) or just the component (when it's an HTMX request).
