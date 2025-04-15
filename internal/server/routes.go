@@ -87,5 +87,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Get("/dm/{friend_id}", s.createPrivateRoom)
 	})
 
+	r.Route("/settings", func(r chi.Router) {
+		r.Use(s.AuthMiddleware)
+
+		r.Get("/", nil)
+		r.Put("/", nil)
+	})
+
 	return r
 }
