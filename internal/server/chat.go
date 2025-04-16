@@ -147,6 +147,7 @@ func (s *Server) showSpecificChatPage(w http.ResponseWriter, r *http.Request) {
 	s.renderComponent(w, r, chat.ChatPage(pageData))
 }
 
+// showPrivateChats method handles direct messages
 func (s *Server) showPrivateChats(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(userContextKey).(User)
 	if !ok || user.UserID == uuid.Nil {
