@@ -1,0 +1,86 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    container_name: postgres_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USERNAME?Variable not set}
+      - POSTGRES_DB=${DB_NAME?Variable not set}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - ADMINER_DESIGN=pepa-linha-dark
+    ports:
+      - "8000:8080"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: '${DOCKER_IMAGE?Variable not set}:${TAG-latest}'
+    restart: always
+    container_name: byte_chat
+    networks:
+      - app-network
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file:
+      - .env
+    environment:
+      - PROJECT_NAME=${PROJECT_NAME}
+      - DOMAIN=${DOMAIN}
+      - RANDOM_HEX=${RANDOM_HEX}
+      - SUPERUSER_ROLE=${SUPERUSER_ROLE:-admin}
+      - SUPERUSER_EMAIL=${SUPERUSER_EMAIL}
+      - SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD}
+      - DB_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST:-postgres_db}:${DB_PORT:-5432}/${DB_NAME:-school_app}?sslmode=disable&search_path=${DB_SCHEMA:-public}
+      - GOOSE_DRIVER=${GOOSE_DRIVER:-postgres}
+      - GOOSE_MIGRATION_DIR=${GOOSE_MIGRATION_DIR:-sql/schema}
+      - DOCKER_IMAGE=${DOCKER_IMAGE:-school_manager}
+      - TAG=${TAG:-latest}
+    depends_on:
+      - db
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy_proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN}
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

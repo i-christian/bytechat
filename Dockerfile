@@ -47,7 +47,7 @@ RUN chown myuser:myuser /usr/local/bin/main
 
 USER myuser
 
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["/usr/local/bin/main"]
 
