@@ -3,6 +3,7 @@ package server
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"bytechat/internal/cookies"
 
@@ -10,6 +11,7 @@ import (
 	"bytechat/internal/database"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -40,11 +42,14 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a new session.
+	// Create a new sessionID and expiry.
 	sessionID := uuid.New()
+	expiry := pgtype.Timestamptz{Time: time.Now().Add(2 * 7 * 24 * time.Hour), Valid: true}
+
 	sessionParams := database.CreateSessionParams{
 		SessionID: sessionID,
 		UserID:    user.UserID,
+		Expires:   expiry,
 	}
 
 	returnedSession, err := s.queries.CreateSession(r.Context(), sessionParams)
