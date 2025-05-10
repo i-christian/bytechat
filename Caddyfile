@@ -1,6 +1,7 @@
-# {
-# 	email {$EMAIL_FOR_CA}
-# }
+# production: uncomment the during prod.
+{
+ 	#email {$EMAIL_FOR_CA}
+}
 
 (logging) {
 	log {
@@ -29,7 +30,8 @@
 }
 
 # Main site definition
-{$DOMAIN:localhost} {
+# for production remove the port `:80` to enable automatic https 
+{$DOMAIN:80} {
 
 	# Import reusable snippets
 	import logging

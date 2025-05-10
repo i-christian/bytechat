@@ -117,7 +117,8 @@ func NewServer() (*Server, *http.Server) {
 		queries:                 generatedQeries,
 		SecretKey:               SecretKey,
 		subscriberMessageBuffer: 16,
-		publishLimiter:          rate.NewLimiter(rate.Every(time.Millisecond*100), 8), subscribersByRoom: make(map[uuid.UUID]map[*subscriber]struct{}),
+		publishLimiter:          rate.NewLimiter(rate.Every(time.Millisecond*100), 8),
+		subscribersByRoom:       make(map[uuid.UUID]map[*subscriber]struct{}),
 	}
 
 	// Declare Server config
