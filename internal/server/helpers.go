@@ -31,7 +31,7 @@ func createSessionCookie(sessionID uuid.UUID) http.Cookie {
 	return cookie
 }
 
-// renderDashboardComponent renders a component either as a full dashboard page
+// renderComponent renders a component either as a full page
 // (when not an HTMX request) or just the component (when it's an HTMX request).
 func (s *Server) renderComponent(w http.ResponseWriter, r *http.Request, children templ.Component) {
 	if r.Header.Get("HX-Request") == "true" {
