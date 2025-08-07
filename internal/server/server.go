@@ -33,7 +33,7 @@ type User struct {
 	UserID    uuid.UUID
 }
 
-// Define the broadcast payload struct (if not already defined above)
+// Define the broadcast payload struct
 type broadcastPayload struct {
 	dbMessage database.Message
 	sender    User
